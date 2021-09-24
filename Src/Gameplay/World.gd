@@ -2,11 +2,22 @@ extends Node
 
 var unit_scene = load("res://Gameplay/Entities/Unit.tscn")
 
+const LAG_SIM_DURATION = 2.0
+
 var network_update_time := 0.0
 var player_states := {}
 var world_state := {}
 var world_state_buffer := []
 var prev_world_state_timestamp := 0
+
+
+func _on_ServerClock_ping_updated(ping: int) -> void:
+	$CanvasLayer/NetworkInfo/VBoxContainer/Ping.text = "Ping: " + str(ping) + "ms"
+
+
+func _on_LagSimTimer_timeout() -> void:
+	GameServer.set_lag_simulation(false)
+	$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.hide()
 
 
 func _on_Unit_path_expired() -> void:
@@ -17,6 +28,14 @@ func _ready() -> void:
 	$Unit.set_network_master(get_tree().get_network_unique_id())
 	GameServer.setup(self)
 	ServerClock.setup()
+	ServerClock.connect("ping_updated", self, "_on_ServerClock_ping_updated")
+
+
+func _process(delta: float) -> void:
+	if Input.is_action_just_pressed("LagSim"):
+		GameServer.set_lag_simulation(true)
+		$LagSimTimer.start(LAG_SIM_DURATION)
+		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
 
 
 func _physics_process(delta: float) -> void:

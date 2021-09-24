@@ -18,9 +18,48 @@ position = Vector2( 64, 56 )
 width = 1.0
 default_color = Color( 1, 1, 1, 1 )
 
+[node name="LagSimTimer" type="Timer" parent="."]
+
 [node name="Navigation2D" type="Navigation2D" parent="."]
 
 [node name="NavigationPolygonInstance" type="NavigationPolygonInstance" parent="Navigation2D"]
 navpoly = SubResource( 1 )
 
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="NetworkInfo" type="MarginContainer" parent="CanvasLayer"]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -200.0
+margin_top = 20.0
+margin_bottom = 64.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/NetworkInfo"]
+margin_right = 200.0
+margin_bottom = 44.0
+
+[node name="Ping" type="Label" parent="CanvasLayer/NetworkInfo/VBoxContainer"]
+margin_right = 200.0
+margin_bottom = 14.0
+text = "Ping: 0ms"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LagSimWarning" type="Label" parent="CanvasLayer/NetworkInfo/VBoxContainer"]
+visible = false
+modulate = Color( 1, 0, 0, 1 )
+margin_top = 18.0
+margin_right = 200.0
+margin_bottom = 32.0
+text = "SIMULATING LAG"
+align = 1
+valign = 1
+
 [connection signal="path_expired" from="Unit" to="." method="_on_Unit_path_expired"]
+[connection signal="timeout" from="LagSimTimer" to="." method="_on_LagSimTimer_timeout"]
