@@ -23,3 +23,10 @@ func _physics_process(delta: float) -> void:
 		if _path.empty():
 			emit_signal("path_expired")
 			
+	if is_network_master():
+		var player_state = {
+			Constants.Network.TIME: OS.get_system_time_msecs(),
+			Constants.Network.POSITION: get_global_position()
+		}
+		
+		GameServer.send_player_state(player_state)

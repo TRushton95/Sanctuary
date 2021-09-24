@@ -12,7 +12,7 @@ func setup(world: Node) -> void:
 ###################
 
 func send_player_state(player_state: Dictionary) -> void:
-	game_world.rpc_unreliable_id(Constants.SERVER_ID, "recieve_player_state", player_state)
+	game_world.rpc_unreliable_id(Constants.SERVER_ID, "receive_player_state", player_state)
 
 
 ###################

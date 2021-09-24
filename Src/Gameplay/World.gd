@@ -1,7 +1,9 @@
 extends Node
 
+var unit_scene = load("res://Gameplay/Entities/Unit.tscn")
+
 var network_update_time := 0.0
-var player_update_requests := {}
+var player_states := {}
 var world_state := {}
 var world_state_buffer := []
 var prev_world_state_timestamp := 0
@@ -12,7 +14,9 @@ func _on_Unit_path_expired() -> void:
 
 
 func _ready() -> void:
+	$Unit.set_network_master(get_tree().get_network_unique_id())
 	GameServer.setup(self)
+	ServerClock.setup()
 
 
 func _physics_process(delta: float) -> void:
@@ -35,14 +39,13 @@ func _physics_process(delta: float) -> void:
 				if !world_state_buffer[1].has(key):
 					continue
 				
-				var username = "CLIENT_NAME" # TODO: Get username from serverlist by key (network id)
+				var username = ServerInfo.get_username(key)
+				var new_position = lerp(world_state_buffer[1][key][Constants.Network.POSITION], world_state_buffer[2][key][Constants.Network.POSITION], interpolation_factor)
 				
 				if has_node(username):
-					var new_position = lerp(world_state_buffer[1][key][Constants.Network.POSITION], world_state_buffer[2][key][Constants.Network.POSITION], interpolation_factor)
 					get_node(username).position = new_position
 				else:
-					# TODO: Spawn player
-					pass
+					_create_player(key, username, new_position)
 					
 		elif render_time > world_state_buffer[1][Constants.Network.TIME]:
 			var extrapolation_factor = float(render_time - world_state_buffer[0][Constants.Network.TIME]) / float(world_state_buffer[1][Constants.Network.TIME] - world_state_buffer[0][Constants.Network.TIME]) - 1.0
@@ -55,15 +58,14 @@ func _physics_process(delta: float) -> void:
 				if !world_state_buffer[1].has(key):
 					continue
 					
-				var username = "CLIENT_NAME" # TODO: Get username from serverlist by key (network id)
-				
+				var username = ServerInfo.get_username(key)
+				var delta_position = world_state_buffer[1][key][Constants.Network.POSITION] - world_state_buffer[0][key][Constants.Network.POSITION]
+				var new_position = world_state_buffer[1][key][Constants.Network.POSITION] + (delta_position * extrapolation_factor)
+					
 				if has_node(username):
-					var delta_position = world_state_buffer[1][key][Constants.Network.POSITION] - world_state_buffer[0][key][Constants.Network.POSITION]
-					var new_position = world_state_buffer[1][key][Constants.Network.POSITION] + (delta_position * extrapolation_factor)
 					get_node(username).position = new_position
 				else:
-					# TODO: Spawn player
-					pass
+					_create_player(key, username, new_position)
 
 
 func _unhandled_input(event) -> void:
@@ -80,6 +82,14 @@ func _unhandled_input(event) -> void:
 		$Unit._path = path
 
 
+func _create_player(user_id: int, username: String, position: Vector2):
+	var new_unit = unit_scene.instance()
+	new_unit.position = position
+	new_unit.name = username
+	add_child(new_unit)
+	new_unit.set_network_master(user_id)
+
+
 func _process_client_update_requests(delta: float) -> void:
 	network_update_time += delta * 1000
 	if network_update_time >= Constants.SERVER_TICK_RATE_MS:
@@ -87,8 +97,8 @@ func _process_client_update_requests(delta: float) -> void:
 		
 		world_state = {}
 		
-		if !player_update_requests.empty():
-			world_state = player_update_requests.duplicate(true)
+		if !player_states.empty():
+			world_state = player_states.duplicate(true)
 			
 			for player_id in world_state.keys():
 				world_state[player_id].erase(Constants.Network.TIME) # Remove timestamp from returned data
@@ -96,6 +106,16 @@ func _process_client_update_requests(delta: float) -> void:
 		if !world_state.empty():
 			world_state[Constants.Network.TIME] = OS.get_system_time_msecs()
 			GameServer.broadcast_world_state(world_state)
+
+
+master func receive_player_state(new_player_state: Dictionary) -> void:
+	var sender_id = get_tree().get_rpc_sender_id()
+	
+	if player_states.has(sender_id):
+		if player_states[sender_id][Constants.Network.TIME] < new_player_state[Constants.Network.TIME]:
+			player_states[sender_id] = new_player_state
+	else:
+		player_states[sender_id] = new_player_state
 
 
 remotesync func receive_world_state(world_state: Dictionary) -> void:
