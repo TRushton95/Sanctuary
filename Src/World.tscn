@@ -1,3 +1,26 @@
-[gd_scene format=2]
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Entities/Unit.tscn" type="PackedScene" id=1]
+[ext_resource path="res://World.gd" type="Script" id=2]
+
+[sub_resource type="NavigationPolygon" id=1]
+vertices = PoolVector2Array( 1024, 0, 1024, 600, 0, 600, 0, 0 )
+polygons = [ PoolIntArray( 0, 1, 2, 3 ) ]
+outlines = [ PoolVector2Array( 0, 0, 0, 600, 1024, 600, 1024, 0 ) ]
 
 [node name="World" type="Node"]
+script = ExtResource( 2 )
+
+[node name="Unit" parent="." instance=ExtResource( 1 )]
+position = Vector2( 64, 56 )
+
+[node name="PathDebug" type="Line2D" parent="."]
+width = 1.0
+default_color = Color( 1, 1, 1, 1 )
+
+[node name="Navigation2D" type="Navigation2D" parent="."]
+
+[node name="NavigationPolygonInstance" type="NavigationPolygonInstance" parent="Navigation2D"]
+navpoly = SubResource( 1 )
+
+[connection signal="path_expired" from="Unit" to="." method="_on_Unit_path_expired"]
