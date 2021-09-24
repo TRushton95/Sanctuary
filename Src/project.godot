@@ -11,14 +11,15 @@ config_version=4
 [application]
 
 config/name="Sanctuary"
-run/main_scene="res://World.tscn"
+run/main_scene="res://Main.tscn"
 config/icon="res://icon.png"
 
 [autoload]
 
-Constants="*res://Global/Constants.gd"
-ServerClock="*res://Global/ServerClock.gd"
-GameServer="*res://Global/GameServer.gd"
+Constants="*res://Gameplay/Global/Constants.gd"
+ServerClock="*res://Gameplay/Global/ServerClock.gd"
+GameServer="*res://Gameplay/Global/GameServer.gd"
+ServerInfo="*res://Gameplay/Global/ServerInfo.gd"
 
 [physics]
 
