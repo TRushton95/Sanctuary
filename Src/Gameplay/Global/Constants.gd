@@ -9,3 +9,4 @@ const INTERPOLATION_OFFSET_MS := 100
 class Network:
 	const TIME = "T"
 	const POSITION = "P"
+	const REQUEST_ID = "RID"

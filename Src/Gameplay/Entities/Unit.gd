@@ -6,7 +6,7 @@ var _path : PoolVector2Array
 
 signal path_expired
 
-func _physics_process(delta: float) -> void:
+func _process(delta: float) -> void:
 	if !_path.empty():
 		var walkable_distance = SPEED * delta
 		var distance_to_next_point = position.distance_to(_path[0])
@@ -22,11 +22,3 @@ func _physics_process(delta: float) -> void:
 				
 		if _path.empty():
 			emit_signal("path_expired")
-			
-	if is_network_master():
-		var player_state = {
-			Constants.Network.TIME: OS.get_system_time_msecs(),
-			Constants.Network.POSITION: get_global_position()
-		}
-		
-		GameServer.send_player_state(player_state)

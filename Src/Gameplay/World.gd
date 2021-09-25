@@ -4,11 +4,14 @@ var unit_scene = load("res://Gameplay/Entities/Unit.tscn")
 
 const LAG_SIM_DURATION = 2.0
 
+var player_name
 var network_update_time := 0.0
 var player_states := {}
 var world_state := {}
 var world_state_buffer := []
 var prev_world_state_timestamp := 0
+var request_id := 0
+var request_history := []
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -25,7 +28,9 @@ func _on_Unit_path_expired() -> void:
 
 
 func _ready() -> void:
-	$Unit.set_network_master(get_tree().get_network_unique_id())
+	player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
+	get_node("Unit").name = player_name
+	get_node(player_name).set_network_master(get_tree().get_network_unique_id())
 	GameServer.setup(self)
 	ServerClock.setup()
 	ServerClock.connect("ping_updated", self, "_on_ServerClock_ping_updated")
@@ -39,6 +44,8 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_send_player_update()
+		
 	if get_tree().is_network_server():
 		_process_client_update_requests(delta)
 				
@@ -92,13 +99,14 @@ func _unhandled_input(event) -> void:
 		return
 		
 	if event.button_index == BUTTON_RIGHT && event.pressed:
-		var path = $Navigation2D.get_simple_path($Unit.position, event.position)
+		var player = get_node(player_name)
+		var path = $Navigation2D.get_simple_path(player.position, event.position)
 		$PathDebug.clear_points()
 		for point in path:
 			$PathDebug.add_point(point)
 					
 		path.remove(0) # Remove starting point
-		$Unit._path = path
+		player._path = path
 
 
 func _create_player(user_id: int, username: String, position: Vector2):
@@ -107,6 +115,22 @@ func _create_player(user_id: int, username: String, position: Vector2):
 	new_unit.name = username
 	add_child(new_unit)
 	new_unit.set_network_master(user_id)
+
+
+func _send_player_update() -> void:
+	var player = get_node(player_name)
+	
+	if player.is_network_master():
+		var player_state = {
+			Constants.Network.TIME: OS.get_system_time_msecs(),
+			Constants.Network.POSITION: player.get_global_position(),
+			Constants.Network.REQUEST_ID: request_id
+		}
+		
+		GameServer.send_player_state(player_state)
+		request_history.append(player_state)
+		
+		request_id += 1
 
 
 func _process_client_update_requests(delta: float) -> void:
@@ -141,3 +165,29 @@ remotesync func receive_world_state(world_state: Dictionary) -> void:
 	if world_state[Constants.Network.TIME] > prev_world_state_timestamp:
 		prev_world_state_timestamp = world_state[Constants.Network.TIME]
 		world_state_buffer.append(world_state)
+		
+		var player_id = get_tree().get_network_unique_id()
+		var player_state = world_state[player_id]
+		
+		var oudated_requests = []
+		for request in request_history:
+			if request[Constants.Network.REQUEST_ID] < player_state[Constants.Network.REQUEST_ID]:
+				oudated_requests.append(request)
+				
+		# Remove oudated requests
+		for request in oudated_requests:
+			request_history.erase(request)
+			
+		# Replay client-side prediction based on most recent available server data
+		if request_history.size() >= 2 && request_history[0][Constants.Network.REQUEST_ID] == player_state[Constants.Network.REQUEST_ID]:
+			print("Replaying from request " + str(request_history[0][Constants.Network.REQUEST_ID]))
+			
+			var player_name = ServerInfo.get_username(player_id)
+			var player = get_node(player_name)
+			
+			# TODO: Instead of applying a delta change from each request, having to calculate delta between two states - not very tidy
+			player.position = player_state[Constants.Network.POSITION]
+			for i in range(0, request_history.size() - 1):
+				var delta_pos = request_history[i + 1][Constants.Network.POSITION] - request_history[i][Constants.Network.POSITION]
+				player.position += delta_pos
+			
