@@ -6,7 +6,8 @@ var _path : PoolVector2Array
 
 signal path_expired
 
-func _process(delta: float) -> void:
+
+func move_along_path(delta: float) -> void:
 	if !_path.empty():
 		var walkable_distance = SPEED * delta
 		var distance_to_next_point = position.distance_to(_path[0])

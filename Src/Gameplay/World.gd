@@ -12,6 +12,7 @@ var world_state_buffer := []
 var prev_world_state_timestamp := 0
 var request_id := 0
 var request_history := []
+var movement_delta := Vector2.ZERO
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -47,6 +48,10 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var prev_player_position = player.position
+	player.move_along_path(delta)
+	movement_delta = player.position - prev_player_position
+	
 	_send_player_update()
 		
 	if get_tree().is_network_server():
@@ -128,7 +133,13 @@ func _send_player_update() -> void:
 		}
 		
 		GameServer.send_player_state(player_state)
-		request_history.append(player_state)
+		
+		var request_state = {
+			Constants.Network.POSITION: movement_delta,
+			Constants.Network.REQUEST_ID: request_id
+		}
+		
+		request_history.append(request_state)
 		
 		request_id += 1
 
@@ -188,6 +199,6 @@ remotesync func receive_world_state(world_state: Dictionary) -> void:
 			# TODO: Instead of applying a delta change from each request, having to calculate delta between two states - not very tidy
 			player.position = player_state[Constants.Network.POSITION]
 			for i in range(0, request_history.size() - 1):
-				var delta_pos = request_history[i + 1][Constants.Network.POSITION] - request_history[i][Constants.Network.POSITION]
-				player.position += delta_pos
+				var delta_pos = request_history[i][Constants.Network.POSITION]
+				player.position += request_history[i][Constants.Network.POSITION]
 			
