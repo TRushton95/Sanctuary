@@ -2,9 +2,9 @@ extends Node
 
 var unit_scene = load("res://Gameplay/Entities/Unit.tscn")
 
-const LAG_SIM_DURATION = 2.0
+const LAG_SIM_DURATION = 0.5
 
-var player_name
+var player
 var network_update_time := 0.0
 var player_states := {}
 var world_state := {}
@@ -28,9 +28,12 @@ func _on_Unit_path_expired() -> void:
 
 
 func _ready() -> void:
-	player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
+	var player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
 	get_node("Unit").name = player_name
-	get_node(player_name).set_network_master(get_tree().get_network_unique_id())
+	
+	player = get_node(player_name)
+	player.set_network_master(get_tree().get_network_unique_id())
+	
 	GameServer.setup(self)
 	ServerClock.setup()
 	ServerClock.connect("ping_updated", self, "_on_ServerClock_ping_updated")
@@ -99,7 +102,6 @@ func _unhandled_input(event) -> void:
 		return
 		
 	if event.button_index == BUTTON_RIGHT && event.pressed:
-		var player = get_node(player_name)
 		var path = $Navigation2D.get_simple_path(player.position, event.position)
 		$PathDebug.clear_points()
 		for point in path:
@@ -118,8 +120,6 @@ func _create_player(user_id: int, username: String, position: Vector2):
 
 
 func _send_player_update() -> void:
-	var player = get_node(player_name)
-	
 	if player.is_network_master():
 		var player_state = {
 			Constants.Network.TIME: OS.get_system_time_msecs(),
