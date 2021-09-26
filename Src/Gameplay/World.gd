@@ -199,6 +199,5 @@ remotesync func receive_world_state(world_state: Dictionary) -> void:
 			# TODO: Instead of applying a delta change from each request, having to calculate delta between two states - not very tidy
 			player.position = player_state[Constants.Network.POSITION]
 			for i in range(0, request_history.size() - 1):
-				var delta_pos = request_history[i][Constants.Network.POSITION]
 				player.position += request_history[i][Constants.Network.POSITION]
 			
