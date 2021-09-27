@@ -182,21 +182,19 @@ remotesync func receive_world_state(world_state: Dictionary) -> void:
 		
 		var oudated_requests = []
 		for request in request_history:
-			if request[Constants.Network.REQUEST_ID] < player_state[Constants.Network.REQUEST_ID]:
+			if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
 				oudated_requests.append(request)
 				
 		# Remove oudated requests
 		for request in oudated_requests:
 			request_history.erase(request)
 			
+		player.position = player_state[Constants.Network.POSITION]
+		
 		# Replay client-side prediction based on most recent available server data
-		if request_history.size() >= 2 && request_history[0][Constants.Network.REQUEST_ID] == player_state[Constants.Network.REQUEST_ID]:
+		# TODO possible bug as packets order most likely not guarunteed?
+		if request_history.size() > 0:
 			print("Replaying from request " + str(request_history[0][Constants.Network.REQUEST_ID]))
-			
-			var player_name = ServerInfo.get_username(player_id)
-			var player = get_node(player_name)
-			
-			player.position = player_state[Constants.Network.POSITION]
-			for i in range(0, request_history.size() - 1):
+			for i in range(0, request_history.size()):
 				player.position += request_history[i][Constants.Network.POSITION] # TODO perhaps create new constant for this to make it clear its not position, but position delta
 			
