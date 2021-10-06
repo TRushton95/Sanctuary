@@ -1,0 +1,1 @@
+- Find way how client can avoid setting its predicted location after lagging and being informed by the server it was further back (with a very old request id and therefore ignored)
