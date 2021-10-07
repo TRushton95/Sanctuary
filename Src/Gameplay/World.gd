@@ -1,6 +1,6 @@
 extends Node
 
-var unit_scene = load("res://Gameplay/Entities/Unit.tscn")
+var unit_scene = load("res://Gameplay/Entities/Unit/Unit.tscn")
 
 const LAG_SIM_DURATION = 0.5
 
