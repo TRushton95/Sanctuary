@@ -5,8 +5,8 @@ const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 const LAG_SIM_DURATION = 0.5
 
 # Components
-var world_server
-var world_client
+var world_server: WorldServer
+var world_client: WorldClient
 
 var player
 var request_history := []
@@ -27,8 +27,7 @@ func _on_Unit_path_expired() -> void:
 
 
 func _ready() -> void:
-	world_server = WorldServer.new()
-	world_client = WorldClient.new(self)
+	_setup_components()
 	
 	var player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
 	get_node("Unit").name = player_name
@@ -53,12 +52,12 @@ func _physics_process(delta: float) -> void:
 	player.move_along_path(delta)
 	movement_delta = player.position - prev_player_position
 	
-	world_client.send_player_update(player)
+	world_client.send_player_update(player, movement_delta)
 		
 	if get_tree().is_network_server():
 		world_server.process_client_update_requests(delta)
 		
-	world_client.process_world_state(delta)
+	world_client.process_world_state()
 
 
 func _unhandled_input(event) -> void:
@@ -89,3 +88,11 @@ func create_player(user_id: int, username: String, position: Vector2):
 	new_unit.name = username
 	add_child(new_unit)
 	new_unit.set_network_master(user_id)
+
+
+func _setup_components() -> void:
+	world_server = WorldServer.new()
+	world_client = WorldClient.new(self)
+	
+	add_child(world_client)
+	add_child(world_server)

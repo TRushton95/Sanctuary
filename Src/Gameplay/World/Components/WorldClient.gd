@@ -14,7 +14,7 @@ func _init(world) -> void:
 	self.world = world
 
 
-func send_player_update(player: Unit) -> void:
+func send_player_update(player: Unit, movement_delta: Vector2) -> void:
 	if player.is_network_master():
 		var player_state = {
 			Constants.Network.TIME: OS.get_system_time_msecs(),
@@ -25,7 +25,7 @@ func send_player_update(player: Unit) -> void:
 		GameServer.send_player_state(player_state)
 		
 		var request_state = {
-			#Constants.Network.POSITION: movement_delta,
+			Constants.Network.POSITION: movement_delta,
 			Constants.Network.REQUEST_ID: request_id
 		}
 		

@@ -3,7 +3,7 @@ extends Node
 
 func _on_ServerButton_pressed():
 	_setup_server()
-	get_tree().change_scene("res://Gameplay/World.tscn")
+	get_tree().change_scene("res://Gameplay/World/World.tscn")
 
 
 func _on_ClientButton_pressed():
@@ -16,7 +16,7 @@ func _on_connection_failed() -> void:
 
 
 func _on_connection_successful() -> void:
-	get_tree().change_scene("res://Gameplay/World.tscn")
+	get_tree().change_scene("res://Gameplay/World/World.tscn")
 
 
 func _ready() -> void:
