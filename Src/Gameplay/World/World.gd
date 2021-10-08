@@ -24,6 +24,19 @@ func _on_Unit_path_expired() -> void:
 	$PathDebug.clear_points()
 
 
+func _on_Unit_started_casting() -> void:
+	$CanvasLayer/CastBar.show()
+
+
+func _on_Unit_stopped_casting() -> void:
+	$CanvasLayer/CastBar.hide()
+
+
+func _on_Unit_progressed_casting(value: float) -> void:
+	$CanvasLayer/CastBar.value = value
+	$CanvasLayer/CastBar/Label.text = str(value).pad_decimals(2)
+
+
 func _ready() -> void:
 	_setup_components()
 	
@@ -43,6 +56,9 @@ func _process(delta: float) -> void:
 		GameServer.set_lag_simulation(true)
 		$LagSimTimer.start(LAG_SIM_DURATION)
 		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
+		
+	if Input.is_action_just_pressed("Cast"):
+		player.cast()
 
 
 func _physics_process(delta: float) -> void:
