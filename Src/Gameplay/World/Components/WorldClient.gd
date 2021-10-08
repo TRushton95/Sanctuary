@@ -14,11 +14,11 @@ func _init(world) -> void:
 	self.world = world
 
 
-func send_player_update(player: Unit, movement_delta: Vector2) -> void:
-	if player.is_network_master():
+func send_player_update(movement_delta: Vector2) -> void:
+	if world.player.is_network_master():
 		var player_state = {
 			Constants.Network.TIME: OS.get_system_time_msecs(),
-			Constants.Network.POSITION: player.get_global_position(),
+			Constants.Network.POSITION: world.player.get_global_position(),
 			Constants.Network.REQUEST_ID: request_id
 		}
 		
@@ -34,7 +34,7 @@ func send_player_update(player: Unit, movement_delta: Vector2) -> void:
 		request_id += 1
 
 
-func update_world_state(world_state: Dictionary, player: Unit) -> void:
+func update_world_state(world_state: Dictionary) -> void:
 	if world_state[Constants.Network.TIME] > prev_world_state_timestamp:
 		prev_world_state_timestamp = world_state[Constants.Network.TIME]
 		world_state_buffer.append(world_state)
@@ -51,14 +51,14 @@ func update_world_state(world_state: Dictionary, player: Unit) -> void:
 		for request in oudated_requests:
 			request_history.erase(request)
 			
-		player.position = player_state[Constants.Network.POSITION]
+		world.player.position = player_state[Constants.Network.POSITION]
 		
 		# Replay client-side prediction based on most recent available server data
 		# TODO possible bug as packets order most likely not guarunteed?
 		if request_history.size() > 0:
 			print("Replaying from request " + str(request_history[0][Constants.Network.REQUEST_ID]))
 			for i in range(0, request_history.size()):
-				player.position += request_history[i][Constants.Network.POSITION] # TODO perhaps create new constant for this to make it clear its not position, but position delta
+				world.player.position += request_history[i][Constants.Network.POSITION] # TODO perhaps create new constant for this to make it clear its not position, but position delta
 
 
 func process_world_state() -> void:

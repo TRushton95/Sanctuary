@@ -9,7 +9,6 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
-var movement_delta := Vector2.ZERO
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -49,9 +48,9 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	var prev_player_position = player.position
 	player.move_along_path(delta)
-	movement_delta = player.position - prev_player_position
+	var movement_delta = player.position - prev_player_position
 	
-	world_client.send_player_update(player, movement_delta)
+	world_client.send_player_update(movement_delta)
 		
 	if get_tree().is_network_server():
 		world_server.process_client_update_requests(delta)
@@ -78,7 +77,7 @@ master func receive_player_state(new_player_state: Dictionary) -> void:
 
 
 remotesync func receive_world_state(world_state: Dictionary) -> void:
-	world_client.update_world_state(world_state, player)
+	world_client.update_world_state(world_state)
 
 
 func create_player(user_id: int, username: String, position: Vector2):
