@@ -1,5 +1,5 @@
 extends Node
-class_name NetworkClient
+class_name WorldClient
 
 const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 

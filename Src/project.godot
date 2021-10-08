@@ -9,25 +9,25 @@
 config_version=4
 
 _global_script_classes=[ {
-"base": "Node",
-"class": "NetworkClient",
-"language": "GDScript",
-"path": "res://Gameplay/World/Components/NetworkClient.gd"
-}, {
-"base": "Node",
-"class": "NetworkServer",
-"language": "GDScript",
-"path": "res://Gameplay/World/Components/NetworkServer.gd"
-}, {
 "base": "KinematicBody2D",
 "class": "Unit",
 "language": "GDScript",
 "path": "res://Gameplay/Entities/Unit/Unit.gd"
+}, {
+"base": "Node",
+"class": "WorldClient",
+"language": "GDScript",
+"path": "res://Gameplay/World/Components/WorldClient.gd"
+}, {
+"base": "Node",
+"class": "WorldServer",
+"language": "GDScript",
+"path": "res://Gameplay/World/Components/WorldServer.gd"
 } ]
 _global_script_class_icons={
-"NetworkClient": "",
-"NetworkServer": "",
-"Unit": ""
+"Unit": "",
+"WorldClient": "",
+"WorldServer": ""
 }
 
 [application]

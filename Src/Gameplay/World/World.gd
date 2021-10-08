@@ -5,8 +5,8 @@ const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 const LAG_SIM_DURATION = 0.5
 
 # Components
-var network_server
-var network_client
+var world_server
+var world_client
 
 var player
 var request_history := []
@@ -27,8 +27,8 @@ func _on_Unit_path_expired() -> void:
 
 
 func _ready() -> void:
-	network_server = NetworkServer.new()
-	network_client = NetworkClient.new(self)
+	world_server = WorldServer.new()
+	world_client = WorldClient.new(self)
 	
 	var player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
 	get_node("Unit").name = player_name
@@ -53,12 +53,12 @@ func _physics_process(delta: float) -> void:
 	player.move_along_path(delta)
 	movement_delta = player.position - prev_player_position
 	
-	network_client.send_player_update(player)
+	world_client.send_player_update(player)
 		
 	if get_tree().is_network_server():
-		network_server.process_client_update_requests(delta)
+		world_server.process_client_update_requests(delta)
 		
-	network_client.process_world_state(delta)
+	world_client.process_world_state(delta)
 
 
 func _unhandled_input(event) -> void:
@@ -75,20 +75,12 @@ func _unhandled_input(event) -> void:
 		player._path = path
 
 
-func _create_player(user_id: int, username: String, position: Vector2):
-	var new_unit = unit_scene.instance()
-	new_unit.position = position
-	new_unit.name = username
-	add_child(new_unit)
-	new_unit.set_network_master(user_id)
-
-
 master func receive_player_state(new_player_state: Dictionary) -> void:
-	network_server.update_player_state(new_player_state)
+	world_server.update_player_state(new_player_state)
 
 
 remotesync func receive_world_state(world_state: Dictionary) -> void:
-	network_client.update_world_state(world_state, player)
+	world_client.update_world_state(world_state, player)
 
 
 func create_player(user_id: int, username: String, position: Vector2):

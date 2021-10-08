@@ -1,5 +1,5 @@
 extends Node
-class_name NetworkServer
+class_name WorldServer
 
 var network_update_time := 0.0
 var world_state := {}
