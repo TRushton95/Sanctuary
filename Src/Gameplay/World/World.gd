@@ -9,7 +9,6 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
-var request_history := []
 var movement_delta := Vector2.ZERO
 
 
