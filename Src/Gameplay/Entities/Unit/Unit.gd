@@ -1,4 +1,5 @@
 extends KinematicBody2D
+class_name Unit
 
 const SPEED := 300
 
