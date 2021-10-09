@@ -5,7 +5,6 @@ var duration := -1.0 setget ,get_duration
 var current_time := -1.0
 var is_running := false setget ,get_is_running
 
-signal expired
 signal started
 signal stopped
 
@@ -18,7 +17,7 @@ func _process(delta: float) -> void:
 	
 	if current_time > duration:
 		is_running = false
-		emit_signal("expired")
+		emit_signal("stopped")
 
 
 func start(duration: float, current_time := 0.0) -> void:
