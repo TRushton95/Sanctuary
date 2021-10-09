@@ -12,19 +12,23 @@ signal stopped_casting
 signal progressed_casting(value)
 
 
+func _on_CastTimer_stopped():
+	_is_casting = false
+	emit_signal("stopped_casting")
+
+
 func _process(delta: float) -> void:
 	if _is_casting:
-		emit_signal("progressed_casting", $CastTimer.time_left)
+		emit_signal("progressed_casting", $CastTimer.current_time)
 
 
-func cast() -> void:
-	if _is_casting:
-		print("Already casting")
-		return
-		
-	$CastTimer.start(2)
-	_is_casting = true
+func start_cast(duration: float, current_time: float = 0.0) -> void:
+	$CastTimer.start(duration, current_time)
 	emit_signal("started_casting")
+
+
+func stop_cast() -> void:
+	$CastTimer.stop()
 
 
 func move_along_path(delta: float) -> void:
@@ -43,8 +47,3 @@ func move_along_path(delta: float) -> void:
 				
 		if _path.empty():
 			emit_signal("path_expired")
-
-
-func _on_CastTimer_timeout() -> void:
-	_is_casting = false
-	emit_signal("stopped_casting")

@@ -12,7 +12,7 @@ _global_script_classes=[ {
 "base": "Node",
 "class": "Stopwatch",
 "language": "GDScript",
-"path": "res://Gameplay/Utility/Stopwatch.gd"
+"path": "res://Gameplay/Utility/Stopwatch/Stopwatch.gd"
 }, {
 "base": "KinematicBody2D",
 "class": "Unit",

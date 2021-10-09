@@ -22,14 +22,15 @@ func _process(delta: float) -> void:
 
 func start(duration: float, current_time := 0.0) -> void:
 	self.duration = duration
-	self.current_time = current_time if current_time > 0.0 else duration
+	self.current_time = current_time if current_time > 0.0 else 0
 	is_running = true
 	emit_signal("started")
 
 
 func stop() -> void:
-	is_running = false
-	emit_signal("stopped")
+	if is_running:
+		is_running = false
+		emit_signal("stopped")
 
 
 # Setgetters

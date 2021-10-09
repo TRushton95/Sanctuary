@@ -58,7 +58,7 @@ func _process(delta: float) -> void:
 		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
 		
 	if Input.is_action_just_pressed("Cast"):
-		player.cast()
+		player.start_cast()
 
 
 func _physics_process(delta: float) -> void:
