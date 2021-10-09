@@ -9,6 +9,7 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
+var input
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -58,7 +59,7 @@ func _process(delta: float) -> void:
 		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
 		
 	if Input.is_action_just_pressed("Cast"):
-		player.start_cast()
+		player.start_cast(2)
 
 
 func _physics_process(delta: float) -> void:

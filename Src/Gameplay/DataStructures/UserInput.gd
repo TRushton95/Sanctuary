@@ -1,5 +1,5 @@
 extends Node
-class_name ClientInput
+class_name UserInput
 
 var data : Dictionary setget ,get_data
 
