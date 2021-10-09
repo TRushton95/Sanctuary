@@ -10,3 +10,9 @@ class Network:
 	const TIME = "T"
 	const POSITION = "P"
 	const REQUEST_ID = "RID"
+
+
+class ClientInput:
+	const COMMAND = "C"
+	const SEQUENCE_ID = "S"
+	const TIMESTAMP = "T"

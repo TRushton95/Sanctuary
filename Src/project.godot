@@ -10,6 +10,11 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Node",
+"class": "ClientInput",
+"language": "GDScript",
+"path": "res://Gameplay/DataStructures/ClientInput.gd"
+}, {
+"base": "Node",
 "class": "Stopwatch",
 "language": "GDScript",
 "path": "res://Gameplay/Utility/Stopwatch/Stopwatch.gd"
@@ -30,6 +35,7 @@ _global_script_classes=[ {
 "path": "res://Gameplay/World/Components/WorldServer.gd"
 } ]
 _global_script_class_icons={
+"ClientInput": "",
 "Stopwatch": "",
 "Unit": "",
 "WorldClient": "",
