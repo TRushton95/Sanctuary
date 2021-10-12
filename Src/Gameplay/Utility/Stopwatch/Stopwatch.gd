@@ -10,6 +10,10 @@ signal stopped
 
 
 func _process(delta: float) -> void:
+	update(delta)
+
+
+func update(delta: float) -> void:
 	if !is_running:
 		return
 		

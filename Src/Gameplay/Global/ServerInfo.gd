@@ -31,6 +31,10 @@ func get_username(id: int) -> String:
 	return result
 
 
+func get_users() -> Dictionary:
+	return _players
+
+
 remote func populate_players(players: Dictionary) -> void:
 	_players = players
 	print("Currenty active players: " + str(players))

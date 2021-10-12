@@ -1,34 +1,73 @@
 extends Node
 class_name WorldServer
 
+var world
 var network_update_time := 0.0
-var world_state := {}
-var player_states := {}
+
+var world_snapshots := {}
+var player_input_buffers := {}
+var latest_ackowledged_player_requests := {}
 
 
-func process_client_update_requests(delta: float) -> void:
+func _init(world) -> void:
+	self.world = world
+
+
+func send_world_state(delta: float) -> void:
 	network_update_time += delta * 1000
 	if network_update_time >= Constants.SERVER_TICK_RATE_MS:
 		network_update_time -= Constants.SERVER_TICK_RATE_MS
 		
-		world_state = {}
+		var world_state = {}
 		
-		if !player_states.empty():
-			world_state = player_states.duplicate(true)
-			
-			for player_id in world_state.keys():
-				world_state[player_id].erase(Constants.Network.TIME) # Remove timestamp from returned data
+		for user_id in ServerInfo.get_users():
+			var username = ServerInfo.get_username(user_id)
+			if world.has_node(username):
 				
+				var request_id = -1
+				if latest_ackowledged_player_requests.has(user_id):
+					request_id = latest_ackowledged_player_requests[user_id]
+				
+				var user = world.get_node(username)
+				
+				world_state[user_id] = {
+					Constants.Network.POSITION: user.position,
+					Constants.Network.TIME: OS.get_system_time_msecs(),
+					Constants.Network.REQUEST_ID: request_id
+				}
+				
+				if user.is_casting:
+					world_state[user_id][Constants.Network.CASTING] = user.get_cast_progress()
+			
 		if !world_state.empty():
 			world_state[Constants.Network.TIME] = OS.get_system_time_msecs()
 			GameServer.broadcast_world_state(world_state)
 
 
-func update_player_state(new_player_state: Dictionary) -> void:
+func buffer_player_input(player_input: Dictionary) -> void:
 	var sender_id = get_tree().get_rpc_sender_id()
-	
-	if player_states.has(sender_id):
-		if player_states[sender_id][Constants.Network.TIME] < new_player_state[Constants.Network.TIME]:
-			player_states[sender_id] = new_player_state
-	else:
-		player_states[sender_id] = new_player_state
+	player_input_buffers[sender_id] = player_input # Possible bug here if we attempt to queue multiple inputs
+
+
+# TODO: Going to process inputs directly for now, thought this should implement server rollback later
+# TODO: Change input variable name here, its misleading as this is a server packet that contains input data - makes you think request_id wouldn't be on it
+func process_player_input_buffer() -> void:
+	for player_id in player_input_buffers.keys():
+		var input = player_input_buffers[player_id]
+		var username = ServerInfo.get_username(player_id)
+		
+		if world.has_node(username):
+			var player = world.get_node(username)
+			
+			match input[Constants.ClientInput.COMMAND]:
+				"M":
+					var destination = input[Constants.ClientInput.PAYLOAD]
+					player.path = NavigationHelper.get_simple_path(player.position, destination)
+				"Q":
+					var cast_duration = input[Constants.ClientInput.PAYLOAD]
+					player.start_cast(cast_duration)
+					
+			if !latest_ackowledged_player_requests.has(player_id) || latest_ackowledged_player_requests[player_id] < input[Constants.ClientInput.REQUEST_ID]:
+				latest_ackowledged_player_requests[player_id] = input[Constants.ClientInput.REQUEST_ID]
+			
+	player_input_buffers.clear()

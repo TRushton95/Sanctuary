@@ -10,6 +10,16 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Node",
+"class": "CastCommand",
+"language": "GDScript",
+"path": "res://Gameplay/DataStructures/Command/CastCommand.gd"
+}, {
+"base": "Node",
+"class": "MoveCommand",
+"language": "GDScript",
+"path": "res://Gameplay/DataStructures/Command/MoveCommand.gd"
+}, {
+"base": "Node",
 "class": "Stopwatch",
 "language": "GDScript",
 "path": "res://Gameplay/Utility/Stopwatch/Stopwatch.gd"
@@ -35,6 +45,8 @@ _global_script_classes=[ {
 "path": "res://Gameplay/World/Components/WorldServer.gd"
 } ]
 _global_script_class_icons={
+"CastCommand": "",
+"MoveCommand": "",
 "Stopwatch": "",
 "Unit": "",
 "UserInput": "",
@@ -54,6 +66,7 @@ Constants="*res://Gameplay/Global/Constants.gd"
 ServerClock="*res://Gameplay/Global/ServerClock.gd"
 GameServer="*res://Gameplay/Global/GameServer.gd"
 ServerInfo="*res://Gameplay/Global/ServerInfo.gd"
+NavigationHelper="*res://Gameplay/Global/NavigationHelper.gd"
 
 [input]
 

@@ -9,7 +9,7 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
-var input
+var buffered_movement_input
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -38,6 +38,14 @@ func _on_Unit_progressed_casting(value: float) -> void:
 	$CanvasLayer/CastBar/Label.text = str(value).pad_decimals(2)
 
 
+func _on_Unit_path_set(path: PoolVector2Array) -> void:
+	path.insert(0, player.position)
+	
+	$PathDebug.clear_points()
+	for point in path:
+		$PathDebug.add_point(point)
+
+
 func _ready() -> void:
 	_setup_components()
 	
@@ -47,6 +55,7 @@ func _ready() -> void:
 	player = get_node(player_name)
 	player.set_network_master(get_tree().get_network_unique_id())
 	
+	NavigationHelper.setup($Navigation2D)
 	GameServer.setup(self)
 	ServerClock.setup()
 	ServerClock.connect("ping_updated", self, "_on_ServerClock_ping_updated")
@@ -58,19 +67,18 @@ func _process(delta: float) -> void:
 		$LagSimTimer.start(LAG_SIM_DURATION)
 		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
 		
-	if Input.is_action_just_pressed("Cast"):
-		player.start_cast(2)
+	var input = world_client.get_input()
+	
+	if input:
+		world_client.send_input(input)
 
 
 func _physics_process(delta: float) -> void:
-	var prev_player_position = player.position
 	player.move_along_path(delta)
-	var movement_delta = player.position - prev_player_position
-	
-	world_client.send_player_update(movement_delta)
 		
 	if get_tree().is_network_server():
-		world_server.process_client_update_requests(delta)
+		world_server.process_player_input_buffer()
+		world_server.send_world_state(delta)
 		
 	world_client.process_world_state()
 
@@ -80,17 +88,11 @@ func _unhandled_input(event) -> void:
 		return
 		
 	if event.button_index == BUTTON_RIGHT && event.pressed:
-		var path = $Navigation2D.get_simple_path(player.position, event.position)
-		$PathDebug.clear_points()
-		for point in path:
-			$PathDebug.add_point(point)
-					
-		path.remove(0) # Remove starting point
-		player._path = path
+		buffered_movement_input = event.global_position
 
 
-master func receive_player_state(new_player_state: Dictionary) -> void:
-	world_server.update_player_state(new_player_state)
+master func receive_player_input(player_input: Dictionary) -> void:
+	world_server.buffer_player_input(player_input)
 
 
 remotesync func receive_world_state(world_state: Dictionary) -> void:
@@ -106,7 +108,7 @@ func create_player(user_id: int, username: String, position: Vector2):
 
 
 func _setup_components() -> void:
-	world_server = WorldServer.new()
+	world_server = WorldServer.new(self)
 	world_client = WorldClient.new(self)
 	
 	add_child(world_client)

@@ -9,10 +9,13 @@ const INTERPOLATION_OFFSET_MS := 100
 class Network:
 	const TIME = "T"
 	const POSITION = "P"
+	const CASTING = "C"
 	const REQUEST_ID = "RID"
 
 
 class ClientInput:
 	const COMMAND = "C"
-	const SEQUENCE_ID = "S"
+	const PAYLOAD = "P"
+	const REQUEST_ID = "RID"
 	const TIMESTAMP = "T"
+	const PATH = "PTH"

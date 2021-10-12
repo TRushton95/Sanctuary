@@ -92,6 +92,7 @@ __meta__ = {
 }
 
 [connection signal="path_expired" from="Unit" to="." method="_on_Unit_path_expired"]
+[connection signal="path_set" from="Unit" to="." method="_on_Unit_path_set"]
 [connection signal="progressed_casting" from="Unit" to="." method="_on_Unit_progressed_casting"]
 [connection signal="started_casting" from="Unit" to="." method="_on_Unit_started_casting"]
 [connection signal="stopped_casting" from="Unit" to="." method="_on_Unit_stopped_casting"]

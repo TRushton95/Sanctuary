@@ -14,22 +14,28 @@ func _init(world) -> void:
 	self.world = world
 
 
-func send_player_update(movement_delta: Vector2) -> void:
+func get_input() -> UserInput:
+	var input = null
+	
+	if world.buffered_movement_input is Vector2:
+		input = UserInput.new("M", world.buffered_movement_input, request_id)
+	if world.buffered_movement_input != null: # Reset
+		world.buffered_movement_input = null
+		
+	if Input.is_action_just_pressed("Cast"):
+		var cast_time = 2.0
+		input = UserInput.new("Q", cast_time, request_id)
+		
+	return input
+
+
+func send_input(input: UserInput) -> void:
 	if world.player.is_network_master():
-		var player_state = {
-			Constants.Network.TIME: OS.get_system_time_msecs(),
-			Constants.Network.POSITION: world.player.get_global_position(),
-			Constants.Network.REQUEST_ID: request_id
-		}
+		GameServer.send_player_input(input.data)
 		
-		GameServer.send_player_state(player_state)
-		
-		var request_state = {
-			Constants.Network.POSITION: movement_delta,
-			Constants.Network.REQUEST_ID: request_id
-		}
-		
-		request_history.append(request_state)
+		var history_data = input.data.duplicate()
+		history_data[Constants.ClientInput.PATH] = world.player.path
+		request_history.append(history_data)
 		
 		request_id += 1
 
@@ -40,25 +46,58 @@ func update_world_state(world_state: Dictionary) -> void:
 		world_state_buffer.append(world_state)
 		
 		var player_id = get_tree().get_network_unique_id()
-		var player_state = world_state[player_id]
-		
-		var oudated_requests = []
-		for request in request_history:
-			if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
-				oudated_requests.append(request)
-				
-		# Remove oudated requests
-		for request in oudated_requests:
-			request_history.erase(request)
+		if world_state.has(player_id):
+			var player_state = world_state[player_id]
 			
-		world.player.position = player_state[Constants.Network.POSITION]
-		
-		# Replay client-side prediction based on most recent available server data
-		# TODO possible bug as packets order most likely not guarunteed?
-		if request_history.size() > 0:
-			print("Replaying from request " + str(request_history[0][Constants.Network.REQUEST_ID]))
-			for i in range(0, request_history.size()):
-				world.player.position += request_history[i][Constants.Network.POSITION] # TODO perhaps create new constant for this to make it clear its not position, but position delta
+			if world_state.has(Constants.Network.REQUEST_ID):
+				print("Sequence id from server: " + str(world_state[Constants.Network.REQUEST_ID]))
+			
+			var oudated_requests = []
+			for request in request_history:
+				if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
+					oudated_requests.append(request)
+					
+			# Remove oudated requests
+			for request in oudated_requests:
+				request_history.erase(request)
+				
+			world.player.position = player_state[Constants.Network.POSITION]
+			
+			if player_state.has(Constants.Network.CASTING):
+				world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
+				print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
+			elif world.player.is_casting:
+				world.player.stop_cast()
+			
+			# Replay client-side prediction based on most recent available server data
+			if request_history.size() > 0:
+				print("Replaying from request " + str(request_history[0][Constants.Network.REQUEST_ID]))
+				
+				world.player.path = request_history[0][Constants.ClientInput.PATH]
+				var FRAME_DURATION = 0.0167 # figure out how we can replay the timestep accurately
+				var snapshot_time = world_state[Constants.Network.TIME] + FRAME_DURATION
+				
+				var temporary_request_history = request_history.duplicate()
+				var inputs = []
+				
+				for request in temporary_request_history:
+					if request[Constants.ClientInput.TIMESTAMP] < snapshot_time:
+						inputs.append(request)
+						
+				for input in inputs:
+					temporary_request_history.erase(input)
+				
+				print("Snapshot time: " + str(snapshot_time))
+				while snapshot_time < ServerClock.get_time():
+					play_forward_frame(FRAME_DURATION, snapshot_time, inputs)
+					snapshot_time += FRAME_DURATION
+					
+				snapshot_time -= FRAME_DURATION # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
+				var remaining_time = ServerClock.get_time() - snapshot_time
+				play_forward_frame(remaining_time, snapshot_time, inputs)
+				
+				print("Played to time: " + str(ServerClock.get_time()))
+				print("Rollback placed at " + str(world.player.position))
 
 
 func process_world_state() -> void:
@@ -105,3 +144,26 @@ func process_world_state() -> void:
 					get_node(username).position = new_position
 				else:
 					world.create_player(key, username, new_position)
+
+
+func play_forward_frame(delta: float, snapshot_time: float, inputs) -> void:
+	for input in inputs:
+		var command_type = input[Constants.ClientInput.COMMAND]
+		var payload = input[Constants.ClientInput.PAYLOAD]
+		var command = build_command(command_type, payload)
+		world.player.input_command(command)
+	
+	world.player.move_along_path(delta)
+	world.player.get_node("CastTimer").update(delta)
+
+
+func build_command(command_type: String, payload):
+	var result
+	
+	match command_type:
+		"M":
+			result = MoveCommand.new(payload)
+		"Q":
+			result = CastCommand.new(payload)
+			
+	return result
