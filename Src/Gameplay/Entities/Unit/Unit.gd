@@ -50,7 +50,7 @@ func input_command(command) -> void:
 		start_cast(command.duration)
 
 
-func move_along_path(delta: float) -> void:
+func try_move_along_path(delta: float) -> void:
 	if !path.empty():
 		var walkable_distance = SPEED * delta
 		

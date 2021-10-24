@@ -1,6 +1,5 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=3 format=2]
 
-[ext_resource path="res://Gameplay/Entities/Unit/Unit.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Gameplay/World/World.gd" type="Script" id=2]
 
 [sub_resource type="NavigationPolygon" id=1]
@@ -10,9 +9,6 @@ outlines = [ PoolVector2Array( 0, 0, 0, 600, 1024, 600, 1024, 0 ) ]
 
 [node name="World" type="Node"]
 script = ExtResource( 2 )
-
-[node name="Unit" parent="." instance=ExtResource( 1 )]
-position = Vector2( 64, 56 )
 
 [node name="PathDebug" type="Line2D" parent="."]
 width = 1.0
@@ -91,9 +87,4 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[connection signal="path_expired" from="Unit" to="." method="_on_Unit_path_expired"]
-[connection signal="path_set" from="Unit" to="." method="_on_Unit_path_set"]
-[connection signal="progressed_casting" from="Unit" to="." method="_on_Unit_progressed_casting"]
-[connection signal="started_casting" from="Unit" to="." method="_on_Unit_started_casting"]
-[connection signal="stopped_casting" from="Unit" to="." method="_on_Unit_stopped_casting"]
 [connection signal="timeout" from="LagSimTimer" to="." method="_on_LagSimTimer_timeout"]

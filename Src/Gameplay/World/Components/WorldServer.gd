@@ -9,8 +9,14 @@ var player_input_buffers := {}
 var latest_ackowledged_player_requests := {}
 
 
+func _on_user_joined(sender_id: int) -> void:
+	world.create_player(sender_id, "Client", Vector2(100, 100))
+
+
 func _init(world) -> void:
 	self.world = world
+	world.create_player(Constants.SERVER_ID, "Server", Vector2(200, 200))
+	ServerInfo.connect("user_joined", self, "_on_user_joined")
 
 
 func send_world_state(delta: float) -> void:
@@ -58,14 +64,7 @@ func process_player_input_buffer() -> void:
 		
 		if world.has_node(username):
 			var player = world.get_node(username)
-			
-			match input[Constants.ClientInput.COMMAND]:
-				"M":
-					var destination = input[Constants.ClientInput.PAYLOAD]
-					player.path = NavigationHelper.get_simple_path(player.position, destination)
-				"Q":
-					var cast_duration = input[Constants.ClientInput.PAYLOAD]
-					player.start_cast(cast_duration)
+			world.execute_input(player, input)
 					
 			if !latest_ackowledged_player_requests.has(player_id) || latest_ackowledged_player_requests[player_id] < input[Constants.ClientInput.REQUEST_ID]:
 				latest_ackowledged_player_requests[player_id] = input[Constants.ClientInput.REQUEST_ID]

@@ -30,11 +30,6 @@ _global_script_classes=[ {
 "path": "res://Gameplay/Entities/Unit/Unit.gd"
 }, {
 "base": "Node",
-"class": "UserInput",
-"language": "GDScript",
-"path": "res://Gameplay/DataStructures/UserInput.gd"
-}, {
-"base": "Node",
 "class": "WorldClient",
 "language": "GDScript",
 "path": "res://Gameplay/World/Components/WorldClient.gd"
@@ -49,7 +44,6 @@ _global_script_class_icons={
 "MoveCommand": "",
 "Stopwatch": "",
 "Unit": "",
-"UserInput": "",
 "WorldClient": "",
 "WorldServer": ""
 }
@@ -67,6 +61,7 @@ ServerClock="*res://Gameplay/Global/ServerClock.gd"
 GameServer="*res://Gameplay/Global/GameServer.gd"
 ServerInfo="*res://Gameplay/Global/ServerInfo.gd"
 NavigationHelper="*res://Gameplay/Global/NavigationHelper.gd"
+InputHelper="*res://Gameplay/Global/InputHelper.gd"
 
 [input]
 

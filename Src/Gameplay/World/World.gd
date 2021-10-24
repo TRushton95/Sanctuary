@@ -49,12 +49,6 @@ func _on_Unit_path_set(path: PoolVector2Array) -> void:
 func _ready() -> void:
 	_setup_components()
 	
-	var player_name = ServerInfo.get_username(get_tree().get_network_unique_id())
-	get_node("Unit").name = player_name
-	
-	player = get_node(player_name)
-	player.set_network_master(get_tree().get_network_unique_id())
-	
 	NavigationHelper.setup($Navigation2D)
 	GameServer.setup(self)
 	ServerClock.setup()
@@ -67,20 +61,29 @@ func _process(delta: float) -> void:
 		$LagSimTimer.start(LAG_SIM_DURATION)
 		$CanvasLayer/NetworkInfo/VBoxContainer/LagSimWarning.show()
 		
+	if player == null:
+		return
+		
 	var input = world_client.get_input()
 	
 	if input:
+		execute_input(player, input)
 		world_client.send_input(input)
 
 
 func _physics_process(delta: float) -> void:
-	player.move_along_path(delta)
+	if player != null:
+		player.try_move_along_path(delta)
 		
 	if get_tree().is_network_server():
+		if has_node("Client"):
+			get_node("Client").try_move_along_path(delta) # TODO: This should loop through Players node when units moved under that
+		
 		world_server.process_player_input_buffer()
 		world_server.send_world_state(delta)
 		
-	world_client.process_world_state()
+	if !get_tree().is_network_server():
+		world_client.process_world_state()
 
 
 func _unhandled_input(event) -> void:
@@ -95,8 +98,8 @@ master func receive_player_input(player_input: Dictionary) -> void:
 	world_server.buffer_player_input(player_input)
 
 
-remotesync func receive_world_state(world_state: Dictionary) -> void:
-	world_client.update_world_state(world_state)
+puppet func receive_world_state(world_state: Dictionary) -> void:
+	world_client.buffer_world_state(world_state)
 
 
 func create_player(user_id: int, username: String, position: Vector2):
@@ -104,12 +107,32 @@ func create_player(user_id: int, username: String, position: Vector2):
 	new_unit.position = position
 	new_unit.name = username
 	add_child(new_unit)
-	new_unit.set_network_master(user_id)
+	#new_unit.set_network_master(user_id)
+	
+	if user_id == get_tree().get_network_unique_id():
+		player = new_unit
+		
+		player.connect("path_expired", self, "_on_Unit_path_expired")
+		player.connect("started_casting", self, "_on_Unit_started_casting")
+		player.connect("stopped_casting", self, "_on_Unit_stopped_casting")
+		player.connect("progressed_casting", self, "_on_Unit_progressed_casting")
+		player.connect("path_set", self, "_on_Unit_path_set")
 
 
 func _setup_components() -> void:
-	world_server = WorldServer.new(self)
+	if get_tree().get_network_unique_id() == Constants.SERVER_ID:
+		world_server = WorldServer.new(self)
+		add_child(world_server)
+		
 	world_client = WorldClient.new(self)
-	
 	add_child(world_client)
-	add_child(world_server)
+
+
+func execute_input(unit: Unit, input: Dictionary) -> void:
+	match input[Constants.ClientInput.COMMAND]:
+		"M":
+			var destination = input[Constants.ClientInput.PAYLOAD]
+			unit.path = NavigationHelper.get_simple_path(unit.position, destination)
+		"Q":
+			var cast_duration = input[Constants.ClientInput.PAYLOAD]
+			unit.start_cast(cast_duration)

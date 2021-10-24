@@ -2,6 +2,8 @@ extends Node
 
 var _players = {}
 
+signal user_joined(user_id)
+
 
 func _ready() -> void:
 	get_tree().connect("connected_to_server", self, "_on_connection_successful")
@@ -51,6 +53,8 @@ func _on_network_peer_connected(id: int) -> void:
 	if get_tree().is_network_server():
 		var sender_id = get_tree().get_rpc_sender_id()
 		rpc_id(sender_id, "populate_players", _players)
+		
+		emit_signal("user_joined", sender_id)
 	
 
 
