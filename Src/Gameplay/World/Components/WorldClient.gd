@@ -8,19 +8,28 @@ var request_id := 0
 var request_history := []
 var world_state_buffer := []
 var prev_world_state_timestamp := 0
+var buffered_movement_input
 
 
 func _init(world) -> void:
 	self.world = world
 
 
+func _unhandled_input(event) -> void:
+	if !event is InputEventMouseButton:
+		return
+		
+	if event.button_index == BUTTON_RIGHT && event.pressed:
+		buffered_movement_input = event.global_position
+
+
 func get_input() -> Dictionary:
 	var input = null
 	
-	if world.buffered_movement_input is Vector2:
-		input = InputHelper.build_data("M", world.buffered_movement_input, request_id)
-	if world.buffered_movement_input != null: # Reset
-		world.buffered_movement_input = null
+	if buffered_movement_input is Vector2:
+		input = InputHelper.build_data("M", buffered_movement_input, request_id)
+	if buffered_movement_input != null: # Reset
+		buffered_movement_input = null
 		
 	if Input.is_action_just_pressed("Cast"):
 		var cast_time = 2.0

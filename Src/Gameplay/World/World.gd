@@ -9,7 +9,6 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
-var buffered_movement_input
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -83,14 +82,6 @@ func _physics_process(delta: float) -> void:
 		
 		if player != null:
 			player.try_move_along_path(delta)
-
-
-func _unhandled_input(event) -> void:
-	if !event is InputEventMouseButton:
-		return
-		
-	if event.button_index == BUTTON_RIGHT && event.pressed:
-		buffered_movement_input = event.global_position
 
 
 master func receive_player_input(player_input: Dictionary) -> void:
