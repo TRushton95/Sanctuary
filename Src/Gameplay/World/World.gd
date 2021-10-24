@@ -72,18 +72,17 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if player != null:
-		player.try_move_along_path(delta)
-		
 	if get_tree().is_network_server():
-		if has_node("Client"):
-			get_node("Client").try_move_along_path(delta) # TODO: This should loop through Players node when units moved under that
-		
+		for unit in $Players.get_children():
+			unit.try_move_along_path(delta)
+			
 		world_server.process_player_input_buffer()
 		world_server.send_world_state(delta)
-		
-	if !get_tree().is_network_server():
+	else:
 		world_client.process_world_state()
+		
+		if player != null:
+			player.try_move_along_path(delta)
 
 
 func _unhandled_input(event) -> void:
@@ -102,12 +101,21 @@ puppet func receive_world_state(world_state: Dictionary) -> void:
 	world_client.buffer_world_state(world_state)
 
 
+func get_player(username: String) -> Node:
+	var result = null
+	
+	if $Players.has_node(username):
+		result = $Players.get_node(username)
+	
+	return result
+
+
 func create_player(user_id: int, username: String, position: Vector2):
 	var new_unit = unit_scene.instance()
 	new_unit.position = position
 	new_unit.name = username
-	add_child(new_unit)
-	#new_unit.set_network_master(user_id)
+	$Players.add_child(new_unit)
+	#new_unit.set_network_master(user_id) # TODO Is this necessary?
 	
 	if user_id == get_tree().get_network_unique_id():
 		player = new_unit
@@ -119,15 +127,6 @@ func create_player(user_id: int, username: String, position: Vector2):
 		player.connect("path_set", self, "_on_Unit_path_set")
 
 
-func _setup_components() -> void:
-	if get_tree().get_network_unique_id() == Constants.SERVER_ID:
-		world_server = WorldServer.new(self)
-		add_child(world_server)
-		
-	world_client = WorldClient.new(self)
-	add_child(world_client)
-
-
 func execute_input(unit: Unit, input: Dictionary) -> void:
 	match input[Constants.ClientInput.COMMAND]:
 		"M":
@@ -136,3 +135,12 @@ func execute_input(unit: Unit, input: Dictionary) -> void:
 		"Q":
 			var cast_duration = input[Constants.ClientInput.PAYLOAD]
 			unit.start_cast(cast_duration)
+
+
+func _setup_components() -> void:
+	if get_tree().get_network_unique_id() == Constants.SERVER_ID:
+		world_server = WorldServer.new(self)
+		add_child(world_server)
+		
+	world_client = WorldClient.new(self)
+	add_child(world_client)

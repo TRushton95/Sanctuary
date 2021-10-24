@@ -28,13 +28,12 @@ func send_world_state(delta: float) -> void:
 		
 		for user_id in ServerInfo.get_users():
 			var username = ServerInfo.get_username(user_id)
-			if world.has_node(username):
-				
+			var user = world.get_player(username)
+			
+			if user != null:
 				var request_id = -1
 				if latest_ackowledged_player_requests.has(user_id):
 					request_id = latest_ackowledged_player_requests[user_id]
-				
-				var user = world.get_node(username)
 				
 				world_state[user_id] = {
 					Constants.Network.POSITION: user.position,
@@ -62,8 +61,8 @@ func process_player_input_buffer() -> void:
 		var input = player_input_buffers[player_id]
 		var username = ServerInfo.get_username(player_id)
 		
-		if world.has_node(username):
-			var player = world.get_node(username)
+		var player = world.get_player(username)
+		if player != null:
 			world.execute_input(player, input)
 					
 			if !latest_ackowledged_player_requests.has(player_id) || latest_ackowledged_player_requests[player_id] < input[Constants.ClientInput.REQUEST_ID]:

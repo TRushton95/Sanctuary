@@ -118,8 +118,9 @@ func process_world_state() -> void:
 				var username = ServerInfo.get_username(key)
 				var new_position = lerp(world_state_buffer[1][key][Constants.Network.POSITION], world_state_buffer[2][key][Constants.Network.POSITION], interpolation_factor)
 				
-				if world.has_node(username):
-					world.get_node(username).position = new_position
+				var user = world.get_player(username)
+				if user != null:
+					user.position = new_position
 				else:
 					world.create_player(key, username, new_position)
 					
@@ -137,9 +138,10 @@ func process_world_state() -> void:
 				var username = ServerInfo.get_username(key)
 				var delta_position = world_state_buffer[1][key][Constants.Network.POSITION] - world_state_buffer[0][key][Constants.Network.POSITION]
 				var new_position = world_state_buffer[1][key][Constants.Network.POSITION] + (delta_position * extrapolation_factor)
-					
-				if world.has_node(username):
-					world.get_node(username).position = new_position
+				
+				var user = world.get_player(username)
+				if user != null:
+					user.position = new_position
 				else:
 					world.create_player(key, username, new_position)
 
