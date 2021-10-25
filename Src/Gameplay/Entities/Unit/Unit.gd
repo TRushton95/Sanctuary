@@ -67,7 +67,6 @@ func try_move_along_path(delta: float) -> void:
 			emit_signal("path_expired")
 
 
-
 func set_path(value: PoolVector2Array) -> void:
 	path = value
 	emit_signal("path_set", path)

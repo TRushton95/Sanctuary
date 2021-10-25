@@ -75,21 +75,24 @@ func buffer_world_state(world_state: Dictionary) -> void:
 				
 			# Enforce state to most recent server state
 			world.player.position = player_state[Constants.Network.POSITION]
+			#print("Set to: " + str(player_state[Constants.Network.POSITION]))
 			
 			if player_state.has(Constants.Network.CASTING):
 				world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
 				print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
 			elif world.player.is_casting:
 				world.player.stop_cast()
+				
+			var inputs = []
+			var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
+			var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
+			var snapshot_time = world_state[Constants.Network.TIME] + FRAME_DURATION_MS
 			
 			# Replay client-side prediction based on most recent available server data
 			if request_history.size() > 0:
 				world.player.path = request_history[0][Constants.ClientInput.PATH]
-				var FRAME_DURATION = 0.0167 # figure out how we can replay the timestep accurately
-				var snapshot_time = world_state[Constants.Network.TIME] + FRAME_DURATION
 				
 				var temporary_request_history = request_history.duplicate()
-				var inputs = []
 				
 				for request in temporary_request_history:
 					if request[Constants.ClientInput.TIMESTAMP] < snapshot_time:
@@ -98,13 +101,16 @@ func buffer_world_state(world_state: Dictionary) -> void:
 				for input in inputs:
 					temporary_request_history.erase(input)
 				
-				while snapshot_time < ServerClock.get_time():
-					play_forward_frame(FRAME_DURATION, snapshot_time, inputs)
-					snapshot_time += FRAME_DURATION
-					
-				snapshot_time -= FRAME_DURATION # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
-				var remaining_time = ServerClock.get_time() - snapshot_time
-				play_forward_frame(remaining_time, snapshot_time, inputs)
+			var server_time = ServerClock.get_time()
+			while snapshot_time < server_time:
+				play_forward_frame(FRAME_DURATION, snapshot_time, inputs)
+				snapshot_time += FRAME_DURATION_MS
+				
+			snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
+			var remaining_time = ServerClock.get_time() - snapshot_time
+			play_forward_frame(remaining_time / 1000.0, snapshot_time, inputs)
+			
+#			print("-------------------")
 
 
 func process_world_state() -> void:
@@ -155,7 +161,8 @@ func process_world_state() -> void:
 					world.create_player(key, username, new_position)
 
 
-func play_forward_frame(delta: float, snapshot_time: float, inputs) -> void:
+func play_forward_frame(delta: float, snapshot_time: float, inputs = []) -> void:
+	#print("Playing forward")
 	for input in inputs:
 		var command_type = input[Constants.ClientInput.COMMAND]
 		var payload = input[Constants.ClientInput.PAYLOAD]
