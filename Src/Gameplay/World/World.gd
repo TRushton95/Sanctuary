@@ -101,7 +101,7 @@ func get_player(username: String) -> Node:
 	return result
 
 
-func create_player(user_id: int, username: String, position: Vector2):
+func create_player(user_id: int, username: String, position: Vector2) -> void:
 	var new_unit = unit_scene.instance()
 	new_unit.position = position
 	new_unit.name = username
@@ -116,6 +116,11 @@ func create_player(user_id: int, username: String, position: Vector2):
 		player.connect("stopped_casting", self, "_on_Unit_stopped_casting")
 		player.connect("progressed_casting", self, "_on_Unit_progressed_casting")
 		player.connect("path_set", self, "_on_Unit_path_set")
+
+
+func remove_player(username: String) -> void:
+	var player = $Players.get_node(username)
+	player.queue_free()
 
 
 func execute_input(unit: Unit, input: Dictionary) -> void:

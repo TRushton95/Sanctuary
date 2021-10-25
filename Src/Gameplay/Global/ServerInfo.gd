@@ -3,6 +3,7 @@ extends Node
 var _players = {}
 
 signal user_joined(user_id)
+signal user_disconnected(username)
 
 
 func _ready() -> void:
@@ -59,4 +60,9 @@ func _on_network_peer_connected(id: int) -> void:
 
 
 func _on_network_peer_disconnected(id: int) -> void:
+	print("User disconnected: " + str(id))
+	var username = get_username(id)
 	remove_user(id)
+	
+	if get_tree().is_network_server():
+		emit_signal("user_disconnected", username)

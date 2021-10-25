@@ -13,10 +13,15 @@ func _on_user_joined(sender_id: int) -> void:
 	world.create_player(sender_id, "Client", Vector2(100, 100))
 
 
+func _on_user_disconnected(username: String) -> void:
+	world.remove_player(username)
+
+
 func _init(world) -> void:
 	self.world = world
 	world.create_player(Constants.SERVER_ID, "Server", Vector2(200, 200))
 	ServerInfo.connect("user_joined", self, "_on_user_joined")
+	ServerInfo.connect("user_disconnected", self, "_on_user_disconnected")
 
 
 func send_world_state(delta: float) -> void:
