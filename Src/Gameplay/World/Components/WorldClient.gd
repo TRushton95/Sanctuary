@@ -3,6 +3,8 @@ class_name WorldClient
 
 const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 
+const JITTER_THRESHOLD = 5.0
+
 var world
 var request_id := 0
 var request_history := []
@@ -105,8 +107,8 @@ func buffer_world_state(world_state: Dictionary) -> void:
 			play_forward_frame(remaining_time_ms / 1000.0, inputs)
 			
 			var after = world.player.position
-			print(str(before) + " -> " + str(after))
-#			print("-------------------")
+			if (after - before).length() > JITTER_THRESHOLD:
+				print(str(before) + " -> " + str(after))
 
 
 func process_world_state() -> void:
