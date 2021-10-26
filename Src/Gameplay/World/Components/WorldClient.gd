@@ -61,54 +61,7 @@ func buffer_world_state(world_state: Dictionary) -> void:
 		
 		var player_id = get_tree().get_network_unique_id()
 		if world_state.has(player_id):
-			var player_state = world_state[player_id]
-			
-#			if world_state.has(Constants.Network.REQUEST_ID):
-#				print("Sequence id from server: " + str(world_state[Constants.Network.REQUEST_ID]))
-			
-			var oudated_requests = []
-			for request in request_history:
-				if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
-					oudated_requests.append(request)
-					
-			# Remove oudated requests
-			for request in oudated_requests:
-				request_history.erase(request)
-				
-			var before = world.player.position
-			
-			# Enforce state to most recent server state
-			world.player.position = player_state[Constants.Network.POSITION]
-			#print("Set to: " + str(player_state[Constants.Network.POSITION]))
-			
-			if player_state.has(Constants.Network.CASTING):
-				world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
-				print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
-			elif world.player.is_casting:
-				world.player.stop_cast()
-				
-			var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
-			var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
-			var snapshot_time = world_state[Constants.Network.TIME]
-			
-			# Replay client-side prediction based on most recent available server data
-			if request_history.size() > 0:
-				world.player.path = request_history[0][Constants.ClientInput.PATH]
-				
-			var server_time = ServerClock.get_time()
-			while snapshot_time < server_time:
-				var inputs = get_inputs_for_frame(snapshot_time, FRAME_DURATION_MS)
-				play_forward_frame(FRAME_DURATION, inputs)
-				snapshot_time += FRAME_DURATION_MS
-				
-			snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
-			var remaining_time_ms = ServerClock.get_time() - snapshot_time
-			var inputs = get_inputs_for_frame(snapshot_time, remaining_time_ms)
-			play_forward_frame(remaining_time_ms / 1000.0, inputs)
-			
-			var after = world.player.position
-			if (after - before).length() > JITTER_THRESHOLD:
-				print(str(before) + " -> " + str(after))
+			_reconcile_client_side_prediction(world_state[player_id], world_state[Constants.Network.TIME])
 
 
 func process_world_state() -> void:
@@ -159,19 +112,76 @@ func process_world_state() -> void:
 					world.create_player(key, username, new_position)
 
 
-func play_forward_frame(delta: float, inputs = []) -> void:
+func _reconcile_client_side_prediction(player_state: Dictionary, update_timestamp: float) -> void:
+	var oudated_requests = []
+	for request in request_history:
+		if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
+			oudated_requests.append(request)
+			
+	# Remove oudated requests
+	for request in oudated_requests:
+		request_history.erase(request)
+		
+	var before = world.player.position
+	
+	# Enforce state to most recent server state
+	world.player.position = player_state[Constants.Network.POSITION]
+	#print("Set to: " + str(player_state[Constants.Network.POSITION]))
+	
+	if player_state.has(Constants.Network.CASTING):
+		world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
+		print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
+	elif world.player.is_casting:
+		world.player.stop_cast()
+		
+	var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
+	var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
+	var snapshot_time = update_timestamp
+	
+	# Replay client-side prediction based on most recent available server data
+	if request_history.size() > 0:
+		world.player.path = request_history[0][Constants.ClientInput.PATH]
+		
+	var server_time = ServerClock.get_time()
+	while snapshot_time < server_time:
+		var inputs = _get_inputs_for_frame(snapshot_time, FRAME_DURATION_MS)
+		_play_forward_frame(FRAME_DURATION, inputs)
+		snapshot_time += FRAME_DURATION_MS
+		
+	snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
+	var remaining_time_ms = ServerClock.get_time() - snapshot_time
+	var inputs = _get_inputs_for_frame(snapshot_time, remaining_time_ms)
+	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
+	
+	var after = world.player.position
+	if (after - before).length() > JITTER_THRESHOLD:
+		print(str(before) + " -> " + str(after))
+
+
+func _play_forward_frame(delta: float, inputs = []) -> void:
 	#print("Playing forward")
 	for input in inputs:
 		var command_type = input[Constants.ClientInput.COMMAND]
 		var payload = input[Constants.ClientInput.PAYLOAD]
-		var command = build_command(command_type, payload)
+		var command = _build_command(command_type, payload)
 		world.player.input_command(command)
 	
 	world.player.try_move_along_path(delta)
 	world.player.get_node("CastTimer").update(delta)
 
 
-func build_command(command_type: String, payload):
+func _get_inputs_for_frame(frame_start_time: int, frame_duration_ms: int) -> Array:
+	var inputs = []
+	
+	for request in request_history:
+		var request_time = request[Constants.ClientInput.TIMESTAMP]
+		if request_time > frame_start_time && request_time < frame_start_time + frame_duration_ms:
+			inputs.append(request)
+			
+	return inputs
+
+
+func _build_command(command_type: String, payload):
 	var result
 	
 	match command_type:
@@ -181,14 +191,3 @@ func build_command(command_type: String, payload):
 			result = CastCommand.new(payload)
 			
 	return result
-
-
-func get_inputs_for_frame(frame_start_time: int, frame_duration_ms: int) -> Array:
-	var inputs = []
-	
-	for request in request_history:
-		var request_time = request[Constants.ClientInput.TIMESTAMP]
-		if request_time > frame_start_time && request_time < frame_start_time + frame_duration_ms:
-			inputs.append(request)
-			
-	return inputs
