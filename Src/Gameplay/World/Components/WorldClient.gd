@@ -87,7 +87,7 @@ func buffer_world_state(world_state: Dictionary) -> void:
 				
 			var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
 			var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
-			var snapshot_time = world_state[Constants.Network.TIME] + FRAME_DURATION_MS
+			var snapshot_time = world_state[Constants.Network.TIME]
 			
 			# Replay client-side prediction based on most recent available server data
 			if request_history.size() > 0:
