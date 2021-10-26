@@ -73,6 +73,8 @@ func buffer_world_state(world_state: Dictionary) -> void:
 			for request in oudated_requests:
 				request_history.erase(request)
 				
+			var before = world.player.position
+			
 			# Enforce state to most recent server state
 			world.player.position = player_state[Constants.Network.POSITION]
 			#print("Set to: " + str(player_state[Constants.Network.POSITION]))
@@ -83,7 +85,6 @@ func buffer_world_state(world_state: Dictionary) -> void:
 			elif world.player.is_casting:
 				world.player.stop_cast()
 				
-			var inputs = []
 			var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
 			var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
 			var snapshot_time = world_state[Constants.Network.TIME] + FRAME_DURATION_MS
@@ -92,24 +93,19 @@ func buffer_world_state(world_state: Dictionary) -> void:
 			if request_history.size() > 0:
 				world.player.path = request_history[0][Constants.ClientInput.PATH]
 				
-				var temporary_request_history = request_history.duplicate()
-				
-				for request in temporary_request_history:
-					if request[Constants.ClientInput.TIMESTAMP] < snapshot_time:
-						inputs.append(request)
-						
-				for input in inputs:
-					temporary_request_history.erase(input)
-				
 			var server_time = ServerClock.get_time()
 			while snapshot_time < server_time:
-				play_forward_frame(FRAME_DURATION, snapshot_time, inputs)
+				var inputs = get_inputs_for_frame(snapshot_time, FRAME_DURATION_MS)
+				play_forward_frame(FRAME_DURATION, inputs)
 				snapshot_time += FRAME_DURATION_MS
 				
 			snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
-			var remaining_time = ServerClock.get_time() - snapshot_time
-			play_forward_frame(remaining_time / 1000.0, snapshot_time, inputs)
+			var remaining_time_ms = ServerClock.get_time() - snapshot_time
+			var inputs = get_inputs_for_frame(snapshot_time, remaining_time_ms)
+			play_forward_frame(remaining_time_ms / 1000.0, inputs)
 			
+			var after = world.player.position
+			print(str(before) + " -> " + str(after))
 #			print("-------------------")
 
 
@@ -161,7 +157,7 @@ func process_world_state() -> void:
 					world.create_player(key, username, new_position)
 
 
-func play_forward_frame(delta: float, snapshot_time: float, inputs = []) -> void:
+func play_forward_frame(delta: float, inputs = []) -> void:
 	#print("Playing forward")
 	for input in inputs:
 		var command_type = input[Constants.ClientInput.COMMAND]
@@ -183,3 +179,14 @@ func build_command(command_type: String, payload):
 			result = CastCommand.new(payload)
 			
 	return result
+
+
+func get_inputs_for_frame(frame_start_time: int, frame_duration_ms: int) -> Array:
+	var inputs = []
+	
+	for request in request_history:
+		var request_time = request[Constants.ClientInput.TIMESTAMP]
+		if request_time > frame_start_time && request_time < frame_start_time + frame_duration_ms:
+			inputs.append(request)
+			
+	return inputs
