@@ -7,10 +7,10 @@ const JITTER_THRESHOLD = 5.0
 
 var world
 var request_id := 0
-var request_history := []
 var world_state_buffer := []
 var prev_world_state_timestamp := 0
 var buffered_movement_input
+var request_log := RequestLog.new()
 
 
 func _init(world) -> void:
@@ -45,7 +45,7 @@ func send_input(input: Dictionary) -> void:
 	
 	var history_data = input.duplicate()
 	history_data[Constants.ClientInput.PATH] = world.player.path
-	request_history.append(history_data)
+	request_log.add(history_data)
 	
 	request_id += 1
 
@@ -113,14 +113,7 @@ func process_world_state() -> void:
 
 
 func _reconcile_client_side_prediction(player_state: Dictionary, update_timestamp: float) -> void:
-	var oudated_requests = []
-	for request in request_history:
-		if request[Constants.Network.REQUEST_ID] <= player_state[Constants.Network.REQUEST_ID]: # Equal because we don't want to rollback through the already server-confirmed request
-			oudated_requests.append(request)
-			
-	# Remove oudated requests
-	for request in oudated_requests:
-		request_history.erase(request)
+	request_log.clear_oudated_requests(player_state[Constants.Network.REQUEST_ID])
 		
 	var before = world.player.position
 	
@@ -139,18 +132,18 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 	var snapshot_time = update_timestamp
 	
 	# Replay client-side prediction based on most recent available server data
-	if request_history.size() > 0:
-		world.player.path = request_history[0][Constants.ClientInput.PATH]
+	if !request_log.is_empty():
+		world.player.path = request_log.first()[Constants.ClientInput.PATH]
 		
 	var server_time = ServerClock.get_time()
 	while snapshot_time < server_time:
-		var inputs = _get_inputs_for_frame(snapshot_time, FRAME_DURATION_MS)
+		var inputs = request_log.get_requests_by_time(snapshot_time, FRAME_DURATION_MS)
 		_play_forward_frame(FRAME_DURATION, inputs)
 		snapshot_time += FRAME_DURATION_MS
 		
 	snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
 	var remaining_time_ms = ServerClock.get_time() - snapshot_time
-	var inputs = _get_inputs_for_frame(snapshot_time, remaining_time_ms)
+	var inputs = request_log.get_requests_by_time(snapshot_time, remaining_time_ms)
 	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
 	
 	var after = world.player.position
@@ -168,17 +161,6 @@ func _play_forward_frame(delta: float, inputs = []) -> void:
 	
 	world.player.try_move_along_path(delta)
 	world.player.get_node("CastTimer").update(delta)
-
-
-func _get_inputs_for_frame(frame_start_time: int, frame_duration_ms: int) -> Array:
-	var inputs = []
-	
-	for request in request_history:
-		var request_time = request[Constants.ClientInput.TIMESTAMP]
-		if request_time > frame_start_time && request_time < frame_start_time + frame_duration_ms:
-			inputs.append(request)
-			
-	return inputs
 
 
 func _build_command(command_type: String, payload):

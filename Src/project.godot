@@ -20,6 +20,11 @@ _global_script_classes=[ {
 "path": "res://Gameplay/DataStructures/Command/MoveCommand.gd"
 }, {
 "base": "Node",
+"class": "RequestLog",
+"language": "GDScript",
+"path": "res://Gameplay/DataStructures/RequestLog/RequestLog.gd"
+}, {
+"base": "Node",
 "class": "Stopwatch",
 "language": "GDScript",
 "path": "res://Gameplay/Utility/Stopwatch/Stopwatch.gd"
@@ -42,6 +47,7 @@ _global_script_classes=[ {
 _global_script_class_icons={
 "CastCommand": "",
 "MoveCommand": "",
+"RequestLog": "",
 "Stopwatch": "",
 "Unit": "",
 "WorldClient": "",
