@@ -135,13 +135,11 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 	if !request_log.is_empty():
 		world.player.path = request_log.first()[Constants.ClientInput.PATH]
 		
-	var server_time = ServerClock.get_time()
-	while snapshot_time < server_time:
+	while snapshot_time <= ServerClock.get_time() - FRAME_DURATION_MS:
 		var inputs = request_log.get_requests_by_time(snapshot_time, FRAME_DURATION_MS)
 		_play_forward_frame(FRAME_DURATION, inputs)
 		snapshot_time += FRAME_DURATION_MS
 		
-	snapshot_time -= FRAME_DURATION_MS # TODO: hack fix - snapshot time has been incremented to be bigger than get_time, we want the snapshot BEFORE that
 	var remaining_time_ms = ServerClock.get_time() - snapshot_time
 	var inputs = request_log.get_requests_by_time(snapshot_time, remaining_time_ms)
 	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
