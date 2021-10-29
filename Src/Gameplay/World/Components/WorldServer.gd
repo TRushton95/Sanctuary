@@ -42,7 +42,7 @@ func send_world_state(delta: float) -> void:
 				
 				world_state[user_id] = {
 					Constants.Network.POSITION: user.position,
-					Constants.Network.TIME: OS.get_system_time_msecs(),
+					Constants.Network.TIME: ServerClock.get_time(),
 					Constants.Network.REQUEST_ID: request_id
 				}
 				
@@ -50,7 +50,7 @@ func send_world_state(delta: float) -> void:
 					world_state[user_id][Constants.Network.CASTING] = user.get_cast_progress()
 			
 		if !world_state.empty():
-			world_state[Constants.Network.TIME] = OS.get_system_time_msecs()
+			world_state[Constants.Network.TIME] = ServerClock.get_time()
 			GameServer.broadcast_world_state(world_state)
 
 
