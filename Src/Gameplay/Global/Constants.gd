@@ -16,6 +16,7 @@ class Network:
 class ClientInput:
 	const COMMAND = "C"
 	const PAYLOAD = "P"
+	const MOVEMENT = "M"
 	const REQUEST_ID = "RID"
 	const TIMESTAMP = "T"
 	const PATH = "PTH"

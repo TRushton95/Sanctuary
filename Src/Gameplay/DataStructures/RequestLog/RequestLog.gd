@@ -17,6 +17,10 @@ func first() -> Dictionary:
 	return result
 
 
+func get_requests() -> Array:
+	return _history
+
+
 func is_empty() -> bool:
 	return _history.empty()
 

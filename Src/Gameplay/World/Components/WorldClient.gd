@@ -22,20 +22,19 @@ func _unhandled_input(event) -> void:
 		return
 		
 	if event.button_index == BUTTON_RIGHT && event.pressed:
-		buffered_movement_input = event.global_position
+		world.player.path = NavigationHelper.get_simple_path(world.player.position, event.global_position)
 
 
-func get_input() -> Dictionary:
+func get_input(movement_delta: Vector2) -> Dictionary:
 	var input = null
 	
-	if buffered_movement_input is Vector2:
-		input = InputHelper.build_data("M", buffered_movement_input, request_id)
-	if buffered_movement_input != null: # Reset
-		buffered_movement_input = null
+	# TODO need to add cast AND move to single command
+	if movement_delta != Vector2.ZERO:
+		input = InputHelper.build_data("M", movement_delta, request_id)
 		
-	if Input.is_action_just_pressed("Cast"):
-		var cast_time = 2.0
-		input = InputHelper.build_data("Q", cast_time, request_id)
+#	if Input.is_action_just_pressed("Cast"):
+#		var cast_time = 2.0
+#		input = InputHelper.build_data("Q", cast_time, request_id)
 		
 	return input
 
@@ -133,20 +132,22 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 	
 	# Replay client-side prediction based on most recent available server data
 	if !request_log.is_empty():
-		world.player.path = request_log.first()[Constants.ClientInput.PATH]
+		for request in request_log.get_requests():
+			world.execute_input(world.player, request)
+			pass
 		
-	while snapshot_time <= ServerClock.get_time() - FRAME_DURATION_MS:
-		var inputs = request_log.get_requests_by_time(snapshot_time, FRAME_DURATION_MS)
-		_play_forward_frame(FRAME_DURATION, inputs)
-		snapshot_time += FRAME_DURATION_MS
-		
-	var remaining_time_ms = ServerClock.get_time() - snapshot_time
-	var inputs = request_log.get_requests_by_time(snapshot_time, remaining_time_ms)
-	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
-	
-	var after = world.player.position
-	if (after - before).length() > JITTER_THRESHOLD:
-		print(str(before) + " -> " + str(after))
+#	while snapshot_time <= ServerClock.get_time() - FRAME_DURATION_MS:
+#		var inputs = request_log.get_requests_by_time(snapshot_time, FRAME_DURATION_MS)
+#		_play_forward_frame(FRAME_DURATION, inputs)
+#		snapshot_time += FRAME_DURATION_MS
+#
+#	var remaining_time_ms = ServerClock.get_time() - snapshot_time
+#	var inputs = request_log.get_requests_by_time(snapshot_time, remaining_time_ms)
+#	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
+#
+#	var after = world.player.position
+#	if (after - before).length() > JITTER_THRESHOLD:
+#		print(str(before) + " -> " + str(after))
 
 
 func _play_forward_frame(delta: float, inputs = []) -> void:
