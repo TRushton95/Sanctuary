@@ -3,8 +3,6 @@ class_name WorldClient
 
 const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 
-const JITTER_THRESHOLD = 5.0
-
 var world
 var request_id := 0
 var world_state_buffer := []
@@ -112,54 +110,21 @@ func process_world_state() -> void:
 
 
 func _reconcile_client_side_prediction(player_state: Dictionary, update_timestamp: float) -> void:
-	request_log.clear_oudated_requests(player_state[Constants.Network.REQUEST_ID])
-		
-	var before = world.player.position
-	
 	# Enforce state to most recent server state
 	world.player.position = player_state[Constants.Network.POSITION]
-	#print("Set to: " + str(player_state[Constants.Network.POSITION]))
 	
 	if player_state.has(Constants.Network.CASTING):
 		world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
 		print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
 	elif world.player.is_casting:
 		world.player.stop_cast()
-		
-	var FRAME_DURATION = 1.0 / 60.0 # figure out how we can replay the timestep accurately
-	var FRAME_DURATION_MS = FRAME_DURATION * 1000.0
-	var snapshot_time = update_timestamp
 	
 	# Replay client-side prediction based on most recent available server data
+	request_log.clear_oudated_requests(player_state[Constants.Network.REQUEST_ID])
+	
 	if !request_log.is_empty():
 		for request in request_log.get_requests():
 			world.execute_input(world.player, request)
-			pass
-		
-#	while snapshot_time <= ServerClock.get_time() - FRAME_DURATION_MS:
-#		var inputs = request_log.get_requests_by_time(snapshot_time, FRAME_DURATION_MS)
-#		_play_forward_frame(FRAME_DURATION, inputs)
-#		snapshot_time += FRAME_DURATION_MS
-#
-#	var remaining_time_ms = ServerClock.get_time() - snapshot_time
-#	var inputs = request_log.get_requests_by_time(snapshot_time, remaining_time_ms)
-#	_play_forward_frame(remaining_time_ms / 1000.0, inputs)
-#
-#	var after = world.player.position
-#	if (after - before).length() > JITTER_THRESHOLD:
-#		print(str(before) + " -> " + str(after))
-
-
-func _play_forward_frame(delta: float, inputs = []) -> void:
-	#print("Playing forward")
-	for input in inputs:
-		var command_type = input[Constants.ClientInput.COMMAND]
-		var payload = input[Constants.ClientInput.PAYLOAD]
-		var command = _build_command(command_type, payload)
-		world.player.input_command(command)
-	
-	world.player.try_move_along_path(delta)
-	world.player.get_node("CastTimer").update(delta)
 
 
 func _build_command(command_type: String, payload):
