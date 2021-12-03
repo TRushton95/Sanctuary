@@ -69,6 +69,10 @@ ServerInfo="*res://Gameplay/Global/ServerInfo.gd"
 NavigationHelper="*res://Gameplay/Global/NavigationHelper.gd"
 InputHelper="*res://Gameplay/Global/InputHelper.gd"
 
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/Todo_Manager/plugin.cfg" )
+
 [input]
 
 LagSim={
