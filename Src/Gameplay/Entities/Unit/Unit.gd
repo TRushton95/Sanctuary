@@ -13,9 +13,13 @@ signal stopped_casting
 signal progressed_casting(value)
 
 
-func _on_CastTimer_stopped():
+func _on_CastTimer_stopped() -> void:
 	is_casting = false
 	emit_signal("stopped_casting")
+
+
+func _on_CastTimer_finished() -> void:
+	print("Bang!")
 
 
 func _process(delta: float) -> void:
@@ -25,6 +29,7 @@ func _process(delta: float) -> void:
 
 func start_cast(duration: float, current_time: float = 0.0) -> void:
 	$CastTimer.start(duration, current_time)
+	is_casting = true
 	emit_signal("started_casting")
 
 

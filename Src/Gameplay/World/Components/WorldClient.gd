@@ -27,12 +27,10 @@ func get_input(movement_delta: Vector2) -> Dictionary:
 	var input = null
 	
 	# TODO need to add cast AND move to single command
-	if movement_delta != Vector2.ZERO:
-		input = InputHelper.build_data("M", movement_delta, request_id)
+	input = InputHelper.build_base_input(movement_delta, request_id)
 		
-#	if Input.is_action_just_pressed("Cast"):
-#		var cast_time = 2.0
-#		input = InputHelper.build_data("Q", cast_time, request_id)
+	if Input.is_action_just_pressed("Cast"):
+		InputHelper.add_cast_command(input, 1)
 		
 	return input
 
@@ -125,15 +123,3 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 	if !request_log.is_empty():
 		for request in request_log.get_requests():
 			world.execute_input(world.player, request)
-
-
-func _build_command(command_type: String, payload):
-	var result
-	
-	match command_type:
-		"M":
-			result = MoveCommand.new(payload)
-		"Q":
-			result = CastCommand.new(payload)
-			
-	return result

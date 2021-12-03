@@ -123,12 +123,16 @@ func remove_player(username: String) -> void:
 
 
 func execute_input(unit: Unit, input: Dictionary) -> void:
-	match input[Constants.ClientInput.COMMAND]:
-		"M":
-			unit.position += input[Constants.ClientInput.PAYLOAD]
-		"Q":
-			var cast_duration = input[Constants.ClientInput.PAYLOAD]
-			unit.start_cast(cast_duration)
+	unit.position += input[Constants.ClientInput.MOVEMENT]
+	
+	# Clients will not attempt to execute abities
+	if !get_tree().is_network_server():
+		return
+	
+	if input.has(Constants.ClientInput.CAST):
+		match input[Constants.ClientInput.CAST]:
+			1: # Arbitrary ability index
+				unit.start_cast(2.0)
 
 
 func _setup_components() -> void:
