@@ -85,6 +85,30 @@ func process_world_state() -> void:
 				else:
 					world.create_player(key, username, new_position)
 					
+				# Resolve casting interpolation
+				var has_casting_from = world_state_buffer[1][key].has(Constants.Network.CASTING)
+				var has_casting_to = world_state_buffer[2][key].has(Constants.Network.CASTING)
+				
+				if !has_casting_from && !has_casting_to:
+					return
+					
+				var casting_from = world_state_buffer[1][key][Constants.Network.CASTING] if has_casting_from else 0
+				var casting_to = world_state_buffer[2][key][Constants.Network.CASTING] if has_casting_to else 0
+				var current_cast_time = lerp(casting_from, casting_to, interpolation_factor)
+				
+				if has_casting_from && !has_casting_to:
+					# TODO Stop casting
+					print("End cast from server update")
+					return
+					
+				if !has_casting_from && has_casting_to:
+					# TODO Start casting
+					print("Start cast from server update")
+					return
+				
+				# TODO Update cast timer
+				print("Cast duration from server update: " + str(current_cast_time))
+					
 		elif render_time > world_state_buffer[1][Constants.Network.TIME]:
 			var extrapolation_factor = float(render_time - world_state_buffer[0][Constants.Network.TIME]) / float(world_state_buffer[1][Constants.Network.TIME] - world_state_buffer[0][Constants.Network.TIME]) - 1.0
 			
@@ -110,12 +134,6 @@ func process_world_state() -> void:
 func _reconcile_client_side_prediction(player_state: Dictionary, update_timestamp: float) -> void:
 	# Enforce state to most recent server state
 	world.player.position = player_state[Constants.Network.POSITION]
-	
-	if player_state.has(Constants.Network.CASTING):
-		world.player.start_cast(2.0, player_state[Constants.Network.CASTING]) # TODO: Don't hardcode the duration here
-		print("Enforced casting progress from server: " + str(player_state[Constants.Network.CASTING]))
-	elif world.player.is_casting:
-		world.player.stop_cast()
 	
 	# Replay client-side prediction based on most recent available server data
 	request_log.clear_oudated_requests(player_state[Constants.Network.REQUEST_ID])
