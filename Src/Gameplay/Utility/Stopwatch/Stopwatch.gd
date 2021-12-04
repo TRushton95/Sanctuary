@@ -7,6 +7,7 @@ var is_running := false setget ,get_is_running
 
 signal started
 signal stopped
+signal finished
 
 
 func _process(delta: float) -> void:
@@ -20,8 +21,8 @@ func update(delta: float) -> void:
 	current_time += delta
 	
 	if current_time > duration:
-		is_running = false
-		emit_signal("stopped")
+		stop()
+		emit_signal("finished")
 
 
 func start(duration: float, current_time := 0.0) -> void:

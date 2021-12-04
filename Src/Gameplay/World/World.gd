@@ -63,25 +63,24 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 		
-	var input = world_client.get_input()
+	var movement_delta = player.get_next_position_delta(delta)
+	var input = world_client.get_input(movement_delta)
 	
 	if input:
-		execute_input(player, input)
 		world_client.send_input(input)
+		
+		if !get_tree().is_network_server():
+			execute_input(player, input)
 
 
 func _physics_process(delta: float) -> void:
 	if get_tree().is_network_server():
-		for unit in $Players.get_children():
-			unit.try_move_along_path(delta)
-			
 		world_server.process_player_input_buffer()
 		world_server.send_world_state(delta)
 	else:
 		world_client.process_world_state()
 		
-		if player != null:
-			player.try_move_along_path(delta)
+	#player.try_move_along_path(delta)
 
 
 master func receive_player_input(player_input: Dictionary) -> void:
@@ -124,13 +123,16 @@ func remove_player(username: String) -> void:
 
 
 func execute_input(unit: Unit, input: Dictionary) -> void:
-	match input[Constants.ClientInput.COMMAND]:
-		"M":
-			var destination = input[Constants.ClientInput.PAYLOAD]
-			unit.path = NavigationHelper.get_simple_path(unit.position, destination)
-		"Q":
-			var cast_duration = input[Constants.ClientInput.PAYLOAD]
-			unit.start_cast(cast_duration)
+	unit.position += input[Constants.ClientInput.MOVEMENT]
+	
+	# Clients will not attempt to execute abities
+	if !get_tree().is_network_server():
+		return
+	
+	if input.has(Constants.ClientInput.CAST):
+		match input[Constants.ClientInput.CAST]:
+			1: # Arbitrary ability index
+				unit.start_cast(2.0)
 
 
 func _setup_components() -> void:

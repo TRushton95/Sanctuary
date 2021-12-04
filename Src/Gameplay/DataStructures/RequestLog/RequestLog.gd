@@ -17,19 +17,12 @@ func first() -> Dictionary:
 	return result
 
 
+func get_requests() -> Array:
+	return _history
+
+
 func is_empty() -> bool:
 	return _history.empty()
-
-
-func get_requests_by_time(timestamp: float, duration: float) -> Array:
-	var inputs = []
-	
-	for request in _history:
-		var request_time = request[Constants.ClientInput.TIMESTAMP]
-		if request_time > timestamp && request_time < timestamp + duration:
-			inputs.append(request)
-			
-	return inputs
 
 
 func clear_oudated_requests(request_id: int) -> void:

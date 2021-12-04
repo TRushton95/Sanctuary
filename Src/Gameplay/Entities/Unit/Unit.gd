@@ -13,9 +13,13 @@ signal stopped_casting
 signal progressed_casting(value)
 
 
-func _on_CastTimer_stopped():
+func _on_CastTimer_stopped() -> void:
 	is_casting = false
 	emit_signal("stopped_casting")
+
+
+func _on_CastTimer_finished() -> void:
+	print("Bang!")
 
 
 func _process(delta: float) -> void:
@@ -25,6 +29,7 @@ func _process(delta: float) -> void:
 
 func start_cast(duration: float, current_time: float = 0.0) -> void:
 	$CastTimer.start(duration, current_time)
+	is_casting = true
 	emit_signal("started_casting")
 
 
@@ -50,21 +55,28 @@ func input_command(command) -> void:
 		start_cast(command.duration)
 
 
-func try_move_along_path(delta: float) -> void:
+func get_next_position_delta(delta: float) -> Vector2:
+	var result = Vector2.ZERO
+	
 	if !path.empty():
 		var walkable_distance = SPEED * delta
+		var simulated_position = position
 		
 		while !path.empty() && walkable_distance > 0:
-			if walkable_distance > position.distance_to(path[0]):
-				walkable_distance -= position.distance_to(path[0])
-				position = path[0]
+			if walkable_distance > simulated_position.distance_to(path[0]):
+				walkable_distance -= simulated_position.distance_to(path[0])
+				simulated_position = path[0]
 				path.remove(0)
 			else:
-				position += position.direction_to(path[0]) * walkable_distance
+				simulated_position += simulated_position.direction_to(path[0]) * walkable_distance
 				walkable_distance = 0
 				
+		result = simulated_position - position
+		
 		if path.empty():
 			emit_signal("path_expired")
+		
+	return result
 
 
 func set_path(value: PoolVector2Array) -> void:
