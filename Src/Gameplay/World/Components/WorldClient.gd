@@ -90,7 +90,7 @@ func process_world_state() -> void:
 				var has_casting_to = world_state_buffer[2][key].has(Constants.Network.CASTING)
 				
 				if !has_casting_from && !has_casting_to:
-					return
+					continue
 					
 				var casting_from = world_state_buffer[1][key][Constants.Network.CASTING] if has_casting_from else 0
 				var casting_to = world_state_buffer[2][key][Constants.Network.CASTING] if has_casting_to else 0
@@ -99,12 +99,12 @@ func process_world_state() -> void:
 				if has_casting_from && !has_casting_to:
 					# TODO Stop casting
 					print("End cast from server update")
-					return
+					continue
 					
 				if !has_casting_from && has_casting_to:
 					# TODO Start casting
 					print("Start cast from server update")
-					return
+					continue
 				
 				# TODO Update cast timer
 				print("Cast duration from server update: " + str(current_cast_time))
