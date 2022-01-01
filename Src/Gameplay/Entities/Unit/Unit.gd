@@ -44,17 +44,6 @@ func get_cast_progress() -> float:
 	return $CastTimer.current_time
 
 
-func input_command(command) -> void:
-	if command is MoveCommand:
-		stop_cast()
-		var new_path = NavigationHelper.get_simple_path(position, command.path)
-		new_path.remove(0) # Remove starting position
-		path = new_path
-		
-	if command is CastCommand:
-		start_cast(command.duration)
-
-
 func get_next_position_delta(delta: float) -> Vector2:
 	var result = Vector2.ZERO
 	

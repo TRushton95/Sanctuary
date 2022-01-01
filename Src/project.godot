@@ -10,16 +10,6 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Node",
-"class": "CastCommand",
-"language": "GDScript",
-"path": "res://Gameplay/DataStructures/Command/CastCommand.gd"
-}, {
-"base": "Node",
-"class": "MoveCommand",
-"language": "GDScript",
-"path": "res://Gameplay/DataStructures/Command/MoveCommand.gd"
-}, {
-"base": "Node",
 "class": "RequestLog",
 "language": "GDScript",
 "path": "res://Gameplay/DataStructures/RequestLog/RequestLog.gd"
@@ -45,8 +35,6 @@ _global_script_classes=[ {
 "path": "res://Gameplay/World/Components/WorldServer.gd"
 } ]
 _global_script_class_icons={
-"CastCommand": "",
-"MoveCommand": "",
 "RequestLog": "",
 "Stopwatch": "",
 "Unit": "",
