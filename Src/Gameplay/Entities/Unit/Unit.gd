@@ -13,8 +13,13 @@ signal stopped_casting
 signal progressed_casting(value)
 
 
+func _on_CastTimer_started() -> void:
+	$CastBar.show()
+
+
 func _on_CastTimer_stopped() -> void:
 	is_casting = false
+	$CastBar.hide()
 	emit_signal("stopped_casting")
 
 
@@ -24,6 +29,8 @@ func _on_CastTimer_finished() -> void:
 
 func _process(delta: float) -> void:
 	if is_casting:
+		$CastBar.value = $CastTimer.current_time
+		$CastBar/Label.text = str($CastTimer.current_time).pad_decimals(2)
 		emit_signal("progressed_casting", $CastTimer.current_time)
 
 

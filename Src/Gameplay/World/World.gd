@@ -69,8 +69,9 @@ func _process(delta: float) -> void:
 	if input:
 		world_client.send_input(input)
 		
+		# Immediately apply local client movement input
 		if !get_tree().is_network_server():
-			execute_input(player, input)
+			player.position += input[Constants.ClientInput.MOVEMENT]
 
 
 func _physics_process(delta: float) -> void:
@@ -120,19 +121,6 @@ func create_player(user_id: int, username: String, position: Vector2) -> void:
 func remove_player(username: String) -> void:
 	var player = $Players.get_node(username)
 	player.queue_free()
-
-
-func execute_input(unit: Unit, input: Dictionary) -> void:
-	unit.position += input[Constants.ClientInput.MOVEMENT]
-	
-	# Clients will not attempt to execute abities
-	if !get_tree().is_network_server():
-		return
-	
-	if input.has(Constants.ClientInput.CAST):
-		match input[Constants.ClientInput.CAST]:
-			1: # Arbitrary ability index
-				unit.start_cast(2.0)
 
 
 func _setup_components() -> void:

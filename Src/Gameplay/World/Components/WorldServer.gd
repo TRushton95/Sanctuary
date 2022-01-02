@@ -59,7 +59,7 @@ func buffer_player_input(player_input: Dictionary) -> void:
 	player_input_buffers[sender_id] = player_input # Possible bug here if we attempt to queue multiple inputs
 
 
-# TODO: Going to process inputs directly for now, thought this should implement server rollback later
+# TODO: Going to process inputs directly for now, though this _might_ need to implement server rollback later
 # TODO: Change input variable name here, its misleading as this is a server packet that contains input data - makes you think request_id wouldn't be on it
 func process_player_input_buffer() -> void:
 	for player_id in player_input_buffers.keys():
@@ -68,9 +68,27 @@ func process_player_input_buffer() -> void:
 		
 		var player = world.get_player(username)
 		if player != null:
-			world.execute_input(player, input)
+			execute_input(player, input)
 					
 			if !latest_ackowledged_player_requests.has(player_id) || latest_ackowledged_player_requests[player_id] < input[Constants.ClientInput.REQUEST_ID]:
 				latest_ackowledged_player_requests[player_id] = input[Constants.ClientInput.REQUEST_ID]
 			
 	player_input_buffers.clear()
+
+
+func execute_input(unit: Unit, input: Dictionary) -> void:
+	unit.position += input[Constants.ClientInput.MOVEMENT]
+		
+	# Cancel casting if moving
+	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO && unit.is_casting:
+		unit.stop_cast()
+		print("Casting interrupted by movement")
+		
+	# Do not attempt to cast ability if moving or already casting
+	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO || unit.is_casting:
+		return
+		
+	if input.has(Constants.ClientInput.CAST):
+		match input[Constants.ClientInput.CAST]:
+			1: # Arbitrary ability index
+				unit.start_cast(2.0)

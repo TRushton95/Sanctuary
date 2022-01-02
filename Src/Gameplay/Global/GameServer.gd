@@ -16,6 +16,7 @@ func set_lag_simulation(enabled: bool) -> void:
 #  CLIENT METHODS #
 ###################
 
+# TODO Needs some kind of resend functionality to ensure player input arrives at server given reasonable constraints
 func send_player_input(player_input: Dictionary) -> void:
 	if !_simulating_lag:
 		_game_world.rpc_unreliable_id(Constants.SERVER_ID, "receive_player_input", player_input)

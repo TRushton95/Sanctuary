@@ -3,6 +3,8 @@ class_name WorldClient
 
 const unit_scene = preload("res://Gameplay/Entities/Unit/Unit.tscn")
 
+const NULL_CASTING = -1.0
+
 var world
 var request_id := 0
 var world_state_buffer := []
@@ -73,7 +75,12 @@ func process_world_state() -> void:
 					continue
 				if !world_state_buffer[1].has(key):
 					continue
+					
+				var casting_from = world_state_buffer[1][key][Constants.Network.CASTING] if world_state_buffer[1][key].has(Constants.Network.CASTING) else NULL_CASTING
+				var casting_to = world_state_buffer[2][key][Constants.Network.CASTING] if world_state_buffer[2][key].has(Constants.Network.CASTING) else NULL_CASTING
+				
 				if key == get_tree().get_network_unique_id() && world.player != null: # If player is not set, we need to create a unit for the player
+					_resolve_casting_interpolation(world.player, casting_from, casting_to, interpolation_factor)
 					continue
 				
 				var username = ServerInfo.get_username(key)
@@ -85,29 +92,10 @@ func process_world_state() -> void:
 				else:
 					world.create_player(key, username, new_position)
 					
-				# Resolve casting interpolation
-				var has_casting_from = world_state_buffer[1][key].has(Constants.Network.CASTING)
-				var has_casting_to = world_state_buffer[2][key].has(Constants.Network.CASTING)
-				
-				if !has_casting_from && !has_casting_to:
-					continue
-					
-				var casting_from = world_state_buffer[1][key][Constants.Network.CASTING] if has_casting_from else 0
-				var casting_to = world_state_buffer[2][key][Constants.Network.CASTING] if has_casting_to else 0
-				var current_cast_time = lerp(casting_from, casting_to, interpolation_factor)
-				
-				if has_casting_from && !has_casting_to:
-					# TODO Stop casting
-					print("End cast from server update")
-					continue
-					
-				if !has_casting_from && has_casting_to:
-					# TODO Start casting
-					print("Start cast from server update")
-					continue
+				_resolve_casting_interpolation(user, casting_from, casting_to, interpolation_factor)
 				
 				# TODO Update cast timer
-				print("Cast duration from server update: " + str(current_cast_time))
+				#print("Cast duration from server update: " + str(current_cast_time))
 					
 		elif render_time > world_state_buffer[1][Constants.Network.TIME]:
 			var extrapolation_factor = float(render_time - world_state_buffer[0][Constants.Network.TIME]) / float(world_state_buffer[1][Constants.Network.TIME] - world_state_buffer[0][Constants.Network.TIME]) - 1.0
@@ -140,4 +128,27 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 	
 	if !request_log.is_empty():
 		for request in request_log.get_requests():
-			world.execute_input(world.player, request)
+			world.player.position += request[Constants.ClientInput.MOVEMENT]
+
+
+func _resolve_casting_interpolation(user: Unit, casting_from: float, casting_to: float, interpolation_factor: float) -> void:
+	var has_casting_from = casting_from != NULL_CASTING
+	var has_casting_to = casting_to != NULL_CASTING
+	
+	# No new casting information
+	if !has_casting_from && !has_casting_to:
+		return
+		
+	var current_cast_time = lerp(casting_from, casting_to, interpolation_factor)
+	
+	#  Stop casting
+	if has_casting_from && !has_casting_to:
+		print("End cast from server update")
+		user.stop_cast()
+		return
+		
+	# Start casting
+	if !has_casting_from && has_casting_to:
+		print("Start cast from server update")
+		user.start_cast(2.0, casting_to) # TODO Send spell id or something and pull duration from that
+		return
