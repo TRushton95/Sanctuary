@@ -44,6 +44,10 @@ func stop_cast() -> void:
 	$CastTimer.stop()
 
 
+func set_cast_progress(current_time: float) -> void:
+	$CastTimer.current_time = current_time
+
+
 func get_cast_progress() -> float:
 	if !is_casting:
 		return -1.0

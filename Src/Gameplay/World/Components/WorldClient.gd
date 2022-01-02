@@ -152,3 +152,12 @@ func _resolve_casting_interpolation(user: Unit, casting_from: float, casting_to:
 		print("Start cast from server update")
 		user.start_cast(2.0, casting_to) # TODO Send spell id or something and pull duration from that
 		return
+		
+	# Progress casting
+	if has_casting_from && has_casting_to:
+		var cast_progress = lerp(casting_from, casting_to, interpolation_factor)
+		
+		if user.is_casting:
+			user.set_cast_progress(cast_progress)
+		else:
+			user.start_cast(2.0, cast_progress) # TODO Send spell id or something and pull duration from that
