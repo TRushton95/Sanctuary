@@ -23,6 +23,12 @@ func _process(delta: float) -> void:
 
 remote func receive_message(message_id: int, message_data: Dictionary) -> void:
 	print("Received messsage")
+	
+	# Ignore if we already have this message
+	if outgoing_acknowledgements.find(message_id) > -1:
+		print("Already got this message")
+		return
+	
 	outgoing_acknowledgements.push_back(message_id)
 	
 	emit_signal("message_received", message_data)
@@ -61,15 +67,16 @@ func broadcast_unacknowledged_messages() -> void:
 
 
 master func receive_acknowledgement(message_id: int) -> void:
-	print("Received ack")
 	var sender_id = get_tree().get_rpc_sender_id()
+	print("Received ack from " + str(sender_id))
 	
 	if !queue.has(message_id):
 		return
 		
 	var message = queue[message_id]
 	
-	if !message.requires_peer_acknowledgement(sender_id):
+	if !message.requires_peer_acknowledgement(sender_id) || message.get_peer_acknowledgement(sender_id):
+		print("Ignoring ack: already received")
 		return
 		
 	message.set_peer_acknowledgement(sender_id, true)
