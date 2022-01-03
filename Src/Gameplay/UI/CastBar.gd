@@ -2,5 +2,5 @@ extends ProgressBar
 
 
 func set_progress(value: float) -> void:
-	$CastBar.value = value
-	$CastBar/Label.text = str(value).pad_decimals(2)
+	self.value = value
+	$Label.text = str(value).pad_decimals(2)
