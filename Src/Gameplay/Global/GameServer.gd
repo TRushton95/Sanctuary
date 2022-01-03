@@ -21,7 +21,6 @@ func send_player_input(player_input: Dictionary) -> void:
 	if !_simulating_lag:
 		_game_world.rpc_unreliable_id(Constants.SERVER_ID, "receive_player_input", player_input)
 
-
 ###################
 #  SERVER METHODS #
 ###################

@@ -1,9 +1,14 @@
 extends Node
 
 var _players = {}
+var _my_id : int setget ,get_my_id
 
 signal user_joined(user_id)
 signal user_disconnected(username)
+
+
+func setup(my_id: int) -> void:
+	_my_id = my_id
 
 
 func _ready() -> void:
@@ -32,6 +37,10 @@ func get_username(id: int) -> String:
 		result = _players[id]
 		
 	return result
+
+
+func get_my_id() -> int:
+	return _my_id
 
 
 func get_users() -> Dictionary:

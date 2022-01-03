@@ -45,13 +45,19 @@ func _on_Unit_path_set(path: PoolVector2Array) -> void:
 		$PathDebug.add_point(point)
 
 
+func _on_ReliableMessageQueue_message_received(data: Dictionary) -> void:
+	pass
+
+
 func _ready() -> void:
 	_setup_components()
 	
+	ServerInfo.setup(get_tree().get_network_unique_id())
 	NavigationHelper.setup($Navigation2D)
 	GameServer.setup(self)
 	ServerClock.setup()
 	ServerClock.connect("ping_updated", self, "_on_ServerClock_ping_updated")
+	ReliableMessageQueue.connect("message_received", self, "_on_ReliableMessageQueue_message_received")
 
 
 func _process(delta: float) -> void:
