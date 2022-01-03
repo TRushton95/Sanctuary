@@ -30,7 +30,11 @@ func all_peers_acknowledged() -> bool:
 	return true
 
 
-func get_unackowledged_peers() -> Array:
+func requires_peer_acknowledgement(peer_id: int) -> bool:
+	return acknowledgements.has(peer_id)
+
+
+func get_unacknowledged_peers() -> Array:
 	var result = []
 	
 	for peer_id in acknowledgements.keys():
@@ -40,7 +44,7 @@ func get_unackowledged_peers() -> Array:
 	return result
 
 
-func get_peer_acklowedgement(peer_id: int) -> bool:
+func get_peer_acknowledgement(peer_id: int) -> bool:
 	if acknowledgements.has(peer_id):
 		return acknowledgements[peer_id]
 		
@@ -49,6 +53,6 @@ func get_peer_acklowedgement(peer_id: int) -> bool:
 	return false
 
 
-func set_peer_acklowedgement(peer_id: int, value: bool) -> void:
+func set_peer_acknowledgement(peer_id: int, value: bool) -> void:
 	if acknowledgements.has(peer_id):
 		acknowledgements[peer_id] = value
