@@ -33,8 +33,7 @@ func _on_Unit_stopped_casting() -> void:
 
 
 func _on_Unit_progressed_casting(value: float) -> void:
-	$CanvasLayer/CastBar.value = value
-	$CanvasLayer/CastBar/Label.text = str(value).pad_decimals(2)
+	$CanvasLayer/CastBar.set_progress(value)
 
 
 func _on_Unit_path_set(path: PoolVector2Array) -> void:

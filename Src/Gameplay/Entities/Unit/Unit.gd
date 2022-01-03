@@ -29,8 +29,7 @@ func _on_CastTimer_finished() -> void:
 
 func _process(delta: float) -> void:
 	if is_casting:
-		$CastBar.value = $CastTimer.current_time
-		$CastBar/Label.text = str($CastTimer.current_time).pad_decimals(2)
+		$CastBar.set_progress($CastTimer.current_time)
 		emit_signal("progressed_casting", $CastTimer.current_time)
 
 

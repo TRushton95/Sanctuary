@@ -1,5 +1,6 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
+[ext_resource path="res://Gameplay/UI/CastBar.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Gameplay/World/World.gd" type="Script" id=2]
 
 [sub_resource type="NavigationPolygon" id=1]
@@ -59,34 +60,6 @@ text = "SIMULATING LAG"
 align = 1
 valign = 1
 
-[node name="CastBar" type="ProgressBar" parent="CanvasLayer"]
-visible = false
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-margin_left = -160.0
-margin_top = -151.0
-margin_right = 160.0
-margin_bottom = -112.0
-max_value = 2.0
-percent_visible = false
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="CanvasLayer/CastBar"]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -20.0
-margin_top = -7.0
-margin_right = 20.0
-margin_bottom = 7.0
-text = "2.0"
-__meta__ = {
-"_edit_use_anchors_": false
-}
+[node name="CastBar" parent="CanvasLayer" instance=ExtResource( 1 )]
 
 [connection signal="timeout" from="LagSimTimer" to="." method="_on_LagSimTimer_timeout"]
