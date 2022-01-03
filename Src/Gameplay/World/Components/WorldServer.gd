@@ -82,7 +82,7 @@ func execute_input(unit: Unit, input: Dictionary) -> void:
 	# Cancel casting if moving
 	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO && unit.is_casting:
 		unit.stop_cast()
-		ReliableMessageQueue.push_message(Constants.ALL_CONNECTED_PEERS_ID, {})
+		ReliableMessageQueue.push_message(Constants.ALL_CONNECTED_PEERS_ID, {Constants.Network.INTERRUPT: unit.name})
 		print("Casting interrupted by movement")
 		
 	# Do not attempt to cast ability if moving or already casting

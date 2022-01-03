@@ -11,6 +11,7 @@ class Network:
 	const POSITION = "P"
 	const CASTING = "C"
 	const REQUEST_ID = "RID"
+	const INTERRUPT = "I"
 
 
 class ClientInput:

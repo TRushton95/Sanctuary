@@ -44,8 +44,13 @@ func _on_Unit_path_set(path: PoolVector2Array) -> void:
 		$PathDebug.add_point(point)
 
 
+# TODO data maybe doesn't need to be a dictionary, needs a single key for event then payload
 func _on_ReliableMessageQueue_message_received(data: Dictionary) -> void:
-	pass
+	for datum in data.keys():
+		match datum:
+			Constants.Network.INTERRUPT:
+				var interrupted_player = get_node("Players/" + str(data[datum]))
+				print("Interrupted " + interrupted_player.name)
 
 
 func _ready() -> void:
