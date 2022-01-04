@@ -76,24 +76,35 @@ func process_world_state() -> void:
 					continue
 				if !world_state_buffer[1].has(key):
 					continue
-					
-				var casting_from = world_state_buffer[1][key][Constants.Network.CASTING] if world_state_buffer[1][key].has(Constants.Network.CASTING) else NULL_CASTING
-				var casting_to = world_state_buffer[2][key][Constants.Network.CASTING] if world_state_buffer[2][key].has(Constants.Network.CASTING) else NULL_CASTING
-				
-				if key == get_tree().get_network_unique_id() && world.player != null: # If player is not set, we need to create a unit for the player
-					_resolve_casting_interpolation(world.player, casting_from, casting_to, interpolation_factor)
-					continue
 				
 				var username = ServerInfo.get_username(key)
-				var new_position = lerp(world_state_buffer[1][key][Constants.Network.POSITION], world_state_buffer[2][key][Constants.Network.POSITION], interpolation_factor)
-				
 				var user = world.get_player(username)
-				if user != null:
-					user.position = new_position
-				else:
-					world.create_player(key, username, new_position)
+				
+				# Spawn new player or move existing player
+				if key != get_tree().get_network_unique_id() || world.player == null:
+					var new_position = lerp(world_state_buffer[1][key][Constants.Network.POSITION], world_state_buffer[2][key][Constants.Network.POSITION], interpolation_factor)
 					
-				_resolve_casting_interpolation(user, casting_from, casting_to, interpolation_factor)
+					if user != null:
+						user.position = new_position
+					else:
+						world.create_player(key, username, new_position)
+						
+						
+				var ability_index_from = -1
+				var casting_from = NULL_CASTING
+				
+				if world_state_buffer[1][key].has(Constants.Network.CASTING):
+					ability_index_from = world_state_buffer[1][key][Constants.Network.CASTING][0]
+					casting_from = world_state_buffer[1][key][Constants.Network.CASTING][1]
+					
+				var ability_index_to = -1
+				var casting_to = NULL_CASTING
+				
+				if world_state_buffer[2][key].has(Constants.Network.CASTING):
+					ability_index_to = world_state_buffer[2][key][Constants.Network.CASTING][0]
+					casting_to = world_state_buffer[2][key][Constants.Network.CASTING][1]
+					
+				_resolve_casting_interpolation(user, ability_index_from, ability_index_to, casting_from, casting_to, interpolation_factor)
 				
 				# TODO Update cast timer
 				#print("Cast duration from server update: " + str(current_cast_time))
@@ -132,7 +143,7 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 			world.player.position += request[Constants.ClientInput.MOVEMENT]
 
 
-func _resolve_casting_interpolation(user: Unit, casting_from: float, casting_to: float, interpolation_factor: float) -> void:
+func _resolve_casting_interpolation(user: Unit, ability_index_from: int, ability_index_to: int, casting_from: float, casting_to: float, interpolation_factor: float) -> void:
 	var has_casting_from = casting_from != NULL_CASTING
 	var has_casting_to = casting_to != NULL_CASTING
 	
@@ -151,14 +162,20 @@ func _resolve_casting_interpolation(user: Unit, casting_from: float, casting_to:
 	# Start casting
 	if !has_casting_from && has_casting_to:
 		print("Start cast from server update")
-		user.start_cast(2.0, casting_to) # TODO Send spell id or something and pull duration from that
+		user.start_cast(ability_index_to, casting_to)
 		return
+		
+	# Spell cast has changed from one to another within a single frame
+	if ability_index_from > -1 && ability_index_to > -1 && ability_index_from != ability_index_to:
+		print ("Changing spell cast")
+		user.stop_cast()
+		user.start_cast(ability_index_to, casting_to)
 		
 	# Progress casting
 	if has_casting_from && has_casting_to:
 		var cast_progress = lerp(casting_from, casting_to, interpolation_factor)
 		
-		if user.is_casting:
+		if user.is_casting():
 			user.set_cast_progress(cast_progress)
 		else:
-			user.start_cast(2.0, cast_progress) # TODO Send spell id or something and pull duration from that
+			user.start_cast(ability_index_to, cast_progress) # TODO Send spell id or something and pull duration from that

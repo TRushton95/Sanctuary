@@ -54,8 +54,8 @@ func send_world_state(delta: float) -> void:
 					Constants.Network.REQUEST_ID: request_id
 				}
 				
-				if user.is_casting:
-					world_state[user_id][Constants.Network.CASTING] = user.get_cast_progress()
+				if user.is_casting():
+					world_state[user_id][Constants.Network.CASTING] = [user.casting_index, user.get_cast_progress()]
 			
 		if !world_state.empty():
 			world_state[Constants.Network.TIME] = ServerClock.get_time()
@@ -88,21 +88,16 @@ func execute_input(unit: Unit, input: Dictionary) -> void:
 	unit.position += input[Constants.ClientInput.MOVEMENT]
 		
 	# Cancel casting if moving
-	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO && unit.is_casting:
+	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO && unit.is_casting():
 		unit.stop_cast()
 		ReliableMessageQueue.push_message(Constants.ALL_CONNECTED_PEERS_ID, {Constants.Network.INTERRUPT: unit.name})
 		print("Casting interrupted by movement")
 		
 	# Do not attempt to cast ability if moving or already casting
-	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO || unit.is_casting:
+	if input[Constants.ClientInput.MOVEMENT] != Vector2.ZERO || unit.is_casting():
 		return
 		
 	if input.has(Constants.ClientInput.CAST):
-		var ability
-		
 		match input[Constants.ClientInput.CAST]:
-			Enums.Abilities.FROSTBOLT: # Arbitrary ability index
-				ability = unit.get_node("Abilities/Frostbolt")
-				
-		if ability:
-			unit.start_cast(ability.cast_time)
+			Enums.Abilities.FROSTBOLT:
+				unit.start_cast(0) # TODO: Need to map spell to abiltiy index

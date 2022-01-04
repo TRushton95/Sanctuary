@@ -76,7 +76,7 @@ func _process(delta: float) -> void:
 		
 	if get_tree().is_network_server():
 		# Won't work on client, lots of effort for a debugging tool
-		if Input.is_action_just_pressed("Pushback") && player.is_casting:
+		if Input.is_action_just_pressed("Pushback") && player.is_casting():
 			player.set_cast_progress(player.get_cast_progress() - 1.0)
 		
 	if player == null:

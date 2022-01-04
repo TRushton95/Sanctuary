@@ -4,7 +4,8 @@ class_name Unit
 const SPEED := 300
 
 var path : PoolVector2Array setget set_path
-var is_casting := false setget ,get_is_casting
+
+var casting_index := -1
 
 signal path_set
 signal path_expired
@@ -20,26 +21,28 @@ func _on_CastTimer_started(duration: float) -> void:
 
 
 func _on_CastTimer_stopped() -> void:
-	is_casting = false
+	casting_index = -1
 	$CastBar.hide()
 	emit_signal("stopped_casting")
 
 
 func _on_CastTimer_finished() -> void:
 	print("Finished casting!")
+	casting_index = -1
 	emit_signal("finished_casting")
 
 
 func _process(delta: float) -> void:
-	if is_casting:
+	if is_casting():
 		$CastBar.set_progress($CastTimer.current_time)
 		emit_signal("progressed_casting", $CastTimer.current_time)
 
 
-func start_cast(duration: float, current_time: float = 0.0) -> void:
-	$CastTimer.start(duration, current_time)
-	is_casting = true
-	emit_signal("started_casting", duration)
+func start_cast(ability_index: int, current_time: float = 0.0) -> void:
+	var ability = get_node("Abilities").get_child(ability_index)
+	$CastTimer.start(ability.cast_time, current_time)
+	casting_index = ability_index
+	emit_signal("started_casting", ability.cast_time)
 
 
 func stop_cast() -> void:
@@ -51,10 +54,7 @@ func set_cast_progress(current_time: float) -> void:
 
 
 func get_cast_progress() -> float:
-	if !is_casting:
-		return -1.0
-		
-	return $CastTimer.current_time
+	return $CastTimer.current_time if is_casting() else -1.0
 
 
 func get_next_position_delta(delta: float) -> Vector2:
@@ -85,5 +85,5 @@ func set_path(value: PoolVector2Array) -> void:
 	path = value
 	emit_signal("path_set", path)
 
-func get_is_casting() -> bool:
-	return is_casting
+func is_casting() -> bool:
+	return casting_index > -1
