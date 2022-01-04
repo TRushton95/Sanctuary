@@ -1,1 +1,11 @@
-- Find way how client can avoid setting its predicted location after lagging and being informed by the server it was further back (with a very old request id and therefore ignored)
+-----------
+ Features
+-----------
+
+- Make units respect cast ranges
+
+------
+ Bugs
+------
+
+- Stop cast initialisation and finish occuring 3 times

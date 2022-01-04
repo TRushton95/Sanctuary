@@ -11,6 +11,7 @@ var world_state_buffer := []
 var prev_world_state_timestamp := 0
 var buffered_movement_input
 var request_log := RequestLog.new()
+var last_processed_packet_id = -1
 
 
 func _init(world) -> void:
@@ -72,6 +73,8 @@ func process_world_state() -> void:
 			var interpolation_factor = float(render_time - world_state_buffer[1][Constants.Network.TIME]) / float(world_state_buffer[2][Constants.Network.TIME] - world_state_buffer[1][Constants.Network.TIME])
 			
 			for key in world_state_buffer[2].keys():
+				if str(key) == Constants.Network.PACKET_ID:
+					continue
 				if str(key) == Constants.Network.TIME:
 					continue
 				if !world_state_buffer[1].has(key):
@@ -104,15 +107,17 @@ func process_world_state() -> void:
 					ability_index_to = world_state_buffer[2][key][Constants.Network.CASTING][0]
 					casting_to = world_state_buffer[2][key][Constants.Network.CASTING][1]
 					
-				_resolve_casting_interpolation(user, ability_index_from, ability_index_to, casting_from, casting_to, interpolation_factor)
+				# TODO: This needs adding to the elif statement below too
+				_resolve_casting_interpolation(user, ability_index_from, ability_index_to, casting_from, casting_to, interpolation_factor, world_state_buffer[2][Constants.Network.PACKET_ID])
 				
-				# TODO Update cast timer
-				#print("Cast duration from server update: " + str(current_cast_time))
+			last_processed_packet_id = world_state_buffer[2][Constants.Network.PACKET_ID]
 					
 		elif render_time > world_state_buffer[1][Constants.Network.TIME]:
 			var extrapolation_factor = float(render_time - world_state_buffer[0][Constants.Network.TIME]) / float(world_state_buffer[1][Constants.Network.TIME] - world_state_buffer[0][Constants.Network.TIME]) - 1.0
 			
 			for key in world_state_buffer[1].keys():
+				if str(key) == Constants.Network.PACKET_ID:
+					continue
 				if str(key) == Constants.Network.TIME:
 					continue
 				if !world_state_buffer[1].has(key):
@@ -129,6 +134,8 @@ func process_world_state() -> void:
 					user.position = new_position
 				else:
 					world.create_player(key, username, new_position)
+					
+			last_processed_packet_id = world_state_buffer[1][Constants.Network.PACKET_ID]
 
 
 func _reconcile_client_side_prediction(player_state: Dictionary, update_timestamp: float) -> void:
@@ -143,7 +150,7 @@ func _reconcile_client_side_prediction(player_state: Dictionary, update_timestam
 			world.player.position += request[Constants.ClientInput.MOVEMENT]
 
 
-func _resolve_casting_interpolation(user: Unit, ability_index_from: int, ability_index_to: int, casting_from: float, casting_to: float, interpolation_factor: float) -> void:
+func _resolve_casting_interpolation(user: Unit, ability_index_from: int, ability_index_to: int, casting_from: float, casting_to: float, interpolation_factor: float, packet_id: int) -> void:
 	var has_casting_from = casting_from != NULL_CASTING
 	var has_casting_to = casting_to != NULL_CASTING
 	
@@ -153,23 +160,25 @@ func _resolve_casting_interpolation(user: Unit, ability_index_from: int, ability
 		
 	var current_cast_time = lerp(casting_from, casting_to, interpolation_factor)
 	
-	#  Stop casting
-	if has_casting_from && !has_casting_to:
-		print("End cast from server update")
-		user.stop_cast()
-		return
-		
-	# Start casting
-	if !has_casting_from && has_casting_to:
-		print("Start cast from server update")
-		user.start_cast(ability_index_to, casting_to)
-		return
-		
-	# Spell cast has changed from one to another within a single frame
-	if ability_index_from > -1 && ability_index_to > -1 && ability_index_from != ability_index_to:
-		print ("Changing spell cast")
-		user.stop_cast()
-		user.start_cast(ability_index_to, casting_to)
+	# Ensure we don't attempt to start/stop casts multiple times due to processing the same two packets more than once
+	if packet_id > last_processed_packet_id:
+		#  Stop casting
+		if has_casting_from && !has_casting_to:
+			print("End cast from server update")
+			user.stop_cast()
+			return
+			
+		# Start casting
+		if !has_casting_from && has_casting_to:
+			print("Start cast from server update")
+			user.start_cast(ability_index_to, casting_to)
+			return
+			
+		# Spell cast has changed from one to another within a single frame
+		if ability_index_from > -1 && ability_index_to > -1 && ability_index_from != ability_index_to:
+			print ("Changing spell cast")
+			user.stop_cast()
+			user.start_cast(ability_index_to, casting_to)
 		
 	# Progress casting
 	if has_casting_from && has_casting_to:

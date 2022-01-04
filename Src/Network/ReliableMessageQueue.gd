@@ -22,11 +22,11 @@ func _process(delta: float) -> void:
 ###################
 
 remote func receive_message(message_id: int, message_data: Dictionary) -> void:
-	print("Received messsage")
+#	print("Received messsage")
 	
 	# Ignore if we already have this message
 	if outgoing_acknowledgements.find(message_id) > -1:
-		print("Already got this message")
+#		print("Already got this message")
 		return
 	
 	outgoing_acknowledgements.push_back(message_id)
@@ -35,12 +35,12 @@ remote func receive_message(message_id: int, message_data: Dictionary) -> void:
 
 
 func send_acknowledgement(message_id: int) -> void:
-	print("Sent acknowledgement")
+#	print("Sent acknowledgement")
 	rpc_unreliable_id(Constants.SERVER_ID, "receive_acknowledgement", message_id)
 
 
 remote func receive_thank_you(message_id: int) -> void:
-	print("Received thank you")
+#	print("Received thank you")
 	var index = outgoing_acknowledgements.find(message_id)
 	
 	if index > -1:
@@ -68,7 +68,7 @@ func broadcast_unacknowledged_messages() -> void:
 
 master func receive_acknowledgement(message_id: int) -> void:
 	var sender_id = get_tree().get_rpc_sender_id()
-	print("Received ack from " + str(sender_id))
+#	print("Received ack from " + str(sender_id))
 	
 	if !queue.has(message_id):
 		return
@@ -76,7 +76,7 @@ master func receive_acknowledgement(message_id: int) -> void:
 	var message = queue[message_id]
 	
 	if !message.requires_peer_acknowledgement(sender_id) || message.get_peer_acknowledgement(sender_id):
-		print("Ignoring ack: already received")
+#		print("Ignoring ack: already received")
 		return
 		
 	message.set_peer_acknowledgement(sender_id, true)
@@ -88,5 +88,5 @@ master func receive_acknowledgement(message_id: int) -> void:
 
 
 func send_thank_you(peer_id: int, message_id: int) -> void:
-	print("Sent thank you")
+#	print("Sent thank you")
 	rpc_id(peer_id, "receive_thank_you", message_id)

@@ -7,6 +7,7 @@ var network_update_time := 0.0
 var world_snapshots := {}
 var player_input_buffers := {}
 var latest_ackowledged_player_requests := {}
+var packet_id = 0
 
 
 func _on_user_joined(sender_id: int) -> void:
@@ -58,8 +59,11 @@ func send_world_state(delta: float) -> void:
 					world_state[user_id][Constants.Network.CASTING] = [user.casting_index, user.get_cast_progress()]
 			
 		if !world_state.empty():
+			world_state[Constants.Network.PACKET_ID] = packet_id
 			world_state[Constants.Network.TIME] = ServerClock.get_time()
 			GameServer.broadcast_world_state(world_state)
+			
+			packet_id += 1
 
 
 func buffer_player_input(player_input: Dictionary) -> void:

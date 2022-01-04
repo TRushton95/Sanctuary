@@ -7,6 +7,7 @@ const SERVER_TICK_RATE_MS := 50
 const INTERPOLATION_OFFSET_MS := 100
 
 class Network:
+	const PACKET_ID = "PID"
 	const TIME = "T"
 	const POSITION = "P"
 	const CASTING = "C"
