@@ -5,7 +5,7 @@ var duration := -1.0 setget ,get_duration
 var current_time := -1.0 setget set_current_time, get_current_time
 var is_running := false setget ,get_is_running
 
-signal started
+signal started(duration)
 signal stopped
 signal finished
 
@@ -29,7 +29,7 @@ func start(duration: float, current_time := 0.0) -> void:
 	self.duration = duration
 	self.current_time = current_time if current_time > 0.0 else 0
 	is_running = true
-	emit_signal("started")
+	emit_signal("started", duration)
 
 
 func stop() -> void:

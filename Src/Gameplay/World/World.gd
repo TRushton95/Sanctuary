@@ -24,7 +24,8 @@ func _on_Unit_path_expired() -> void:
 	$PathDebug.clear_points()
 
 
-func _on_Unit_started_casting() -> void:
+func _on_Unit_started_casting(duration: float) -> void:
+	$CanvasLayer/CastBar.set_max_value(duration)
 	$CanvasLayer/CastBar.show()
 
 
@@ -46,11 +47,14 @@ func _on_Unit_path_set(path: PoolVector2Array) -> void:
 
 # TODO data maybe doesn't need to be a dictionary, needs a single key for event then payload
 func _on_ReliableMessageQueue_message_received(data: Dictionary) -> void:
-	for datum in data.keys():
-		match datum:
+	for key in data.keys():
+		match key:
 			Constants.Network.INTERRUPT:
-				var interrupted_player = get_node("Players/" + str(data[datum]))
+				var interrupted_player = get_node("Players/" + str(data[key]))
 				print("Interrupted " + interrupted_player.name)
+				
+			Constants.Network.DEBUG:
+				print(data[key])
 
 
 func _ready() -> void:

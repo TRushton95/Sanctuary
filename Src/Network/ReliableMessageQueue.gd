@@ -8,7 +8,6 @@ signal message_received
 
 
 # TODO Find an appropriate tick rate for this
-# TODO Chuck out messages with already process ids
 # TODO Give up broadcasting message if recipient doesn't respond within given time
 func _process(delta: float) -> void:
 	if get_tree().is_network_server():
@@ -16,6 +15,7 @@ func _process(delta: float) -> void:
 	else:
 		for acknowledgement in outgoing_acknowledgements:
 			send_acknowledgement(acknowledgement)
+
 
 ###################
 #  CLIENT METHODS #

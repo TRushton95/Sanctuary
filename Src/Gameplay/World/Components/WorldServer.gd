@@ -17,9 +17,17 @@ func _on_user_disconnected(username: String) -> void:
 	world.remove_player(username)
 
 
+func _on_player_finished_casting(player) -> void:
+	player.get_node("Abilities/Frostbolt").execute(world.get_node("Players/Server"), player)
+
+
 func _init(world) -> void:
 	self.world = world
 	world.create_player(Constants.SERVER_ID, "Server", Vector2(200, 200))
+	
+	for player in world.get_node("Players").get_children():
+		player.connect("finished_casting", self, "_on_player_finished_casting", [player])
+	
 	ServerInfo.connect("user_joined", self, "_on_user_joined")
 	ServerInfo.connect("user_disconnected", self, "_on_user_disconnected")
 
@@ -90,6 +98,11 @@ func execute_input(unit: Unit, input: Dictionary) -> void:
 		return
 		
 	if input.has(Constants.ClientInput.CAST):
+		var ability
+		
 		match input[Constants.ClientInput.CAST]:
-			1: # Arbitrary ability index
-				unit.start_cast(2.0)
+			Enums.Abilities.FROSTBOLT: # Arbitrary ability index
+				ability = unit.get_node("Abilities/Frostbolt")
+				
+		if ability:
+			unit.start_cast(ability.cast_time)

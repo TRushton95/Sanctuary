@@ -8,12 +8,14 @@ var is_casting := false setget ,get_is_casting
 
 signal path_set
 signal path_expired
-signal started_casting
+signal started_casting(duration)
 signal stopped_casting
+signal finished_casting
 signal progressed_casting(value)
 
 
-func _on_CastTimer_started() -> void:
+func _on_CastTimer_started(duration: float) -> void:
+	$CastBar.set_max_value(duration)
 	$CastBar.show()
 
 
@@ -24,7 +26,8 @@ func _on_CastTimer_stopped() -> void:
 
 
 func _on_CastTimer_finished() -> void:
-	print("Bang!")
+	print("Finished casting!")
+	emit_signal("finished_casting")
 
 
 func _process(delta: float) -> void:
@@ -36,7 +39,7 @@ func _process(delta: float) -> void:
 func start_cast(duration: float, current_time: float = 0.0) -> void:
 	$CastTimer.start(duration, current_time)
 	is_casting = true
-	emit_signal("started_casting")
+	emit_signal("started_casting", duration)
 
 
 func stop_cast() -> void:

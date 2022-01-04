@@ -12,6 +12,7 @@ class Network:
 	const CASTING = "C"
 	const REQUEST_ID = "RID"
 	const INTERRUPT = "I"
+	const DEBUG = "DB"
 
 
 class ClientInput:

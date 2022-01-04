@@ -31,8 +31,9 @@ func get_input(movement_delta: Vector2) -> Dictionary:
 	# TODO need to add cast AND move to single command
 	input = InputHelper.build_base_input(movement_delta, request_id)
 		
-	if Input.is_action_just_pressed("Cast"):
-		InputHelper.add_cast_command(input, 1)
+	if Input.is_action_just_pressed("cast_ability_1"):
+		InputHelper.add_cast_command(input, Enums.Abilities.FROSTBOLT) # This needs to map from key -> ability via spellbar/spellbook
+		
 		
 	return input
 

@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://icon.png" type="Texture" id=1]
 [ext_resource path="res://Gameplay/Entities/Unit/Unit.gd" type="Script" id=2]
 [ext_resource path="res://Gameplay/Utility/Stopwatch/Stopwatch.tscn" type="PackedScene" id=3]
 [ext_resource path="res://Gameplay/UI/CastBar.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Gameplay/Abiities/Frostbolt/Frostbolt.tscn" type="PackedScene" id=5]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 24, 24 )
@@ -58,6 +59,10 @@ margin_left = -64.0
 margin_top = -72.0
 margin_right = 64.0
 margin_bottom = -48.0
+
+[node name="Abilities" type="Node" parent="."]
+
+[node name="Frostbolt" parent="Abilities" instance=ExtResource( 5 )]
 
 [connection signal="finished" from="CastTimer" to="." method="_on_CastTimer_finished"]
 [connection signal="started" from="CastTimer" to="." method="_on_CastTimer_started"]
