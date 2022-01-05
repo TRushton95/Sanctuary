@@ -13,6 +13,7 @@ signal started_casting(duration)
 signal stopped_casting
 signal finished_casting
 signal progressed_casting(value)
+signal clicked
 
 
 func _on_CastTimer_started(duration: float) -> void:
@@ -36,6 +37,11 @@ func _process(delta: float) -> void:
 	if is_casting():
 		$CastBar.set_progress($CastTimer.current_time)
 		emit_signal("progressed_casting", $CastTimer.current_time)
+
+
+func _input(event) -> void:
+	if event is InputEventMouseButton && event.button_index == BUTTON_LEFT && event.pressed:
+		emit_signal("clicked")
 
 
 func start_cast(ability_index: int, current_time: float = 0.0) -> void:

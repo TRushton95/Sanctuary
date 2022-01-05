@@ -9,6 +9,7 @@ var world_server: WorldServer
 var world_client: WorldClient
 
 var player
+var target
 
 
 func _on_ServerClock_ping_updated(ping: int) -> void:
@@ -43,6 +44,10 @@ func _on_Unit_path_set(path: PoolVector2Array) -> void:
 	$PathDebug.clear_points()
 	for point in path:
 		$PathDebug.add_point(point)
+
+
+func _on_Unit_clicked(unit: Unit) -> void:
+	target = unit
 
 
 # TODO data maybe doesn't need to be a dictionary, needs a single key for event then payload
@@ -103,6 +108,11 @@ func _physics_process(delta: float) -> void:
 	#player.try_move_along_path(delta)
 
 
+func _unhandled_input(event) -> void:
+	if event is InputEventMouseButton && event.button_index == BUTTON_LEFT && event.pressed:
+		target = null
+
+
 master func receive_player_input(player_input: Dictionary) -> void:
 	world_server.buffer_player_input(player_input)
 
@@ -125,6 +135,7 @@ func create_player(user_id: int, username: String, position: Vector2) -> void:
 	new_unit.position = position
 	new_unit.name = username
 	$Players.add_child(new_unit)
+	new_unit.connect("clicked", self, "_on_Unit_clicked", [new_unit])
 	#new_unit.set_network_master(user_id) # TODO Is this necessary?
 	
 	if user_id == get_tree().get_network_unique_id():
